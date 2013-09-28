@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html ng-app="puzzle">
+<head>
+    <script src="js/jquery.js"></script>
+    <script src="js/angular.js"></script>
+    <script src="js/index.js"></script>
+    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+</head>
+<body ng-controller="main">
+<input ng-model="budget.amount"/>
+
+
+
+    <div class="row">
+        <div class="span6 puzzle-holder">
+            <canvas class="project-img"></canvas>
+            <div class="puzzle-tip"
+                 ng-repeat="part in puzzle.split.parts"
+                 puzzle-part-toggle="toggleTask(part)"
+                 puzzle-part="part"
+                 puzzle-part-no-image="true"
+            ></div>
+        </div>
+        <div class="span6">
+            <ul>
+                <li ng-repeat="task in project.tasks" class="task.status">
+                    <div class="puzzle-part"
+                         puzzle-part="puzzle.split.parts[$index]"
+                         puzzle-part-toggle="toggleTask(puzzle.split.parts[$index])"
+                         puzzle-part-size="32"
+                            >
+
+                    </div>
+                    {{ task.title }} ( {{ task.cost }} ) - {{ task.status }}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+</body>
+</html>

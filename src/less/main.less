@@ -1,39 +1,90 @@
-.puzzle-part {
-  float: left;
-  cursor: pointer;
-  margin: 1px;
+@import "consts";
+@import "elements";
+@import "controls";
+
+
+.autoGradient(@color, @prc:10%) {
+  .gradient(@color, @color, lighten(@color, @prc))
 }
 
-.puzzle-part.off {
-  opacity: 0.5;
+body {
+  font-family: "Segoe WP", "Verdana", sans-serif;
+  font-size: @fontNormal;
 }
 
-.puzzle-holder {
-  position: relative;
+.limited-width {
+  width: 100%;
+  max-width: 1000px;
+  min-width: 800px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
-.puzzle-tip {
-  position: absolute;
-  cursor: pointer;
+
+
+.header-content {
+  .limited-width();
 }
 
-.puzzle-tip.off {
+.main-content {
+  padding-top: @topHeaderHeight + 2*@topHeaderPadding + 5;
+  .limited-width();
+  .top-panel {
+    padding-top: 20px;
+    line-height: 30px;
+    min-height: 30px;
+    h3 {
+      font-size: @fontBig;
+      display: inline;
+    }
+    &> .buttons {
+      float: right;
+    }
+  }
 }
 
-ul {
-  list-style: none;
-}
-li {
-  height: 40px;
-  line-height: 40px;
-  padding-bottom: 2px;
+.data {
+  background-color: #e8e8e8;
 }
 
-li:hover {
-  background-color: #f8ffff;
-}
+//header
 
-li div.puzzle-part {
-  width: 50px;
-  height: 40px;
+.header {
+  width: 100%;
+  z-index: 100;
+  height: @topHeaderHeight;
+  padding: @topHeaderPadding;
+  font-size: @fontBiggest;
+  position: fixed;
+  .drop-shadow(0, 2px, 4px, 0.9);
+  a {
+    img {
+      height: 30px;
+    }
+    h3 {
+      margin: 0;
+      padding: 0;
+      display: inline;
+      color: black;
+    }
+  }
+  .budget {
+    float: right;
+    input {
+      .transition-duration();
+      border: none;
+      color: #b8860b;
+      font-weight: bold;
+      background: none;
+      width: 100px;
+      text-align: right;
+      &:focus {
+        background: white;
+        color: black;
+        .inner-shadow()
+
+      }
+    }
+  }
+  .autoGradient(@headerBg)
 }

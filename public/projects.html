@@ -1,0 +1,26 @@
+
+<div class="top-panel">
+    <h3>Projects list</h3>
+    <div class="buttons">
+        <button class="btn btn-primary add-new-project"
+                dialog-panel-trigger="addProjectDialog"
+                >Add new project</button>
+        <button class="btn btn-danger btn-drop-area delete-project">
+            Drop to delete
+        </button>
+    </div>
+
+    <dialog-panel show-if="addProjectDialog" class="add-project-dialog" on-save="addProject()">
+        <label>
+            New project name:
+            <input ng-model="newProject.title"/>
+        </label>
+    </dialog-panel>
+</div>
+
+<div class="data">
+    <ul class="projects-list clearfix">
+        <li ng-repeat="project in projects" project-thumb="project" delete-to="delete-project" on-delete="deleteProject(project)">
+        </li>
+    </ul>
+</div>

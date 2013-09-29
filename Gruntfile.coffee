@@ -7,17 +7,23 @@ module.exports = (grunt) ->
         src: ["**/*.coffee"]
         dest: "src"
         ext: ".js"
+      building:
+        files:
+          "public/js/index.js": ["tools/loading.coffee"]
+        options:
+          bare: true
     browserify:
       dev:
         files: 
-          'public/js/index.js': ["src/**/*.js"]
+          'public/js/index.js': ["public/js/angular.js", "src/**/*.js"]
     less:
       dev:
         files:
           "public/css/main.css": ["src/less/**/*.less"]
+          "public/css/test.css": ["src/less/**/test.less"]
     watch:
       coffee:
-        files: ["src/**/*.coffee"]
+        files: ["src/**/*.coffee", "public/**/*.html"]
         tasks: ["dev"]
       styles:
         files: ["src/less/**/*.less"] 
@@ -27,6 +33,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-browserify'
   grunt.loadNpmTasks 'grunt-contrib-less'
   grunt.loadNpmTasks 'grunt-contrib-watch'
-  grunt.registerTask 'dev', ['less', 'coffee', 'browserify']
+  grunt.registerTask 'dev', ['coffee:building','less', 'coffee', 'browserify']
   grunt.registerTask 'default', ['dev']
 

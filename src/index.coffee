@@ -1,69 +1,70 @@
-{drawImageWithGrid, splitPicture, drawPuzzlePiece, loadImage, makePuzzlePiece} = require './puzzle/puzzle'
-
 tasksService = require './tasks/tasks'
 
 app = angular.module('puzzle', [])
-
-
 app.service 'tasksService', ->
   tasksService.load()
   tasksService
 
-updatePartVisibility = (part) -> part.visible = part.data.is 'completed'
+require './test'
+(require './ui')(app)
 
-loadPuzzle = (puzzle, project, cb) ->
-  loadImage project.image, (image) ->
-    puzzle.image = image
-    puzzle.split = splitPicture(image.width, image.height, 10, project.tasks)
-    puzzle.split.parts.forEach updatePartVisibility
-    cb()
-
-
-app.controller 'main', (tasksService, $scope) ->
-  $scope.puzzle = {}
-  $scope.project = tasksService.project
+app.controller 'header', ($scope, tasksService) ->
   $scope.budget = tasksService.budget
-  $scope.$watch "project.id", (->
-    loadPuzzle $scope.puzzle, $scope.project, ->
-      $scope.$apply()
-  )
-  $scope.toggleTask = (part) ->
-    tasksService.toggle(part.data)
-    updatePartVisibility(part)
+  $scope.$watch 'budget.amount', (newVal) ->
+    tasksService.setBudget newVal
 
-  $scope.$watch "budget.amount", ->
-    tasksService.updateStatus()
+app.config ($routeProvider) ->
+  $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html'
+  $routeProvider.when '/:project', controller: 'project', templateUrl: './project.html'
 
-  tasksService.selectProject(tasksService.projects[0])
-  $scope.$watch "puzzle.split.parts", (->
-    $canvas = $("canvas.project-img")[0]
-    return if not $scope.puzzle.image
-    drawImageWithGrid($canvas, $scope.puzzle.image, $scope.puzzle.split)
-  ), true
+app.controller 'projects', (tasksService, $scope, $location) ->
+  $scope.projects = tasksService.projects
+  $scope.newProject = {title:""}
+  $scope.addProject = ->
+    if $scope.newProject.title
+      proj = tasksService.addProject $scope.newProject.title, "/img/pic1.jpg"
+      $location.path "/#{proj.id}"
+    $scope.$apply()
+  $scope.deleteProject = (project) ->
+    tasksService.deleteProject project
 
 
-app.directive 'puzzlePart', ->
-  replace: true
+
+app.controller 'project', (tasksService, $scope, $routeParams) ->
+  projectId = $routeParams.project
+  tasksService.selectProject(projectId)
+  tasksService.updateStatus()
+  $scope.currentTask = {}
+  $scope.newTask = {title: ""}
+  $scope.addTask = ->
+    tasksService.addTask $scope.newTask.title if $scope.newTask.title
+    $scope.dialog('addTaskDialog').show()
+  $scope.deleteTask = (task) ->
+    tasksService.deleteTask task
+    $scope.$apply()
+  $scope.project = tasksService.project
+  $scope.toggleTask = (task) ->
+    tasksService.toggle(task)
+
+
+
+app.directive 'projectThumb', (tasksService) ->
   scope:
-    puzzlePart: '=puzzlePart'
-    puzzlePartToggle: '&'
+    project: "=projectThumb"
   template:
     """
-    <div
-      ng-click="puzzlePartToggle()"
-      ng-class="{off: !puzzlePart.visible}"
-      title="{{ puzzlePart.data.title }}"></div>
+    <div class="project">
+      <a href="#/{{ project.id }}">{{ project.name }} - {{ progress(project).toFixed(0) }} %</a>
+    </div>
     """
   link: (scope, el, attrs) ->
-    piece = null
-    scope.$parent.$watch attrs.puzzlePart, (newVal, oldVal)->
-      part = newVal
-      return if not part
-      puzzle = scope.$parent.puzzle
-      image = if attrs.puzzlePartNoImage then new Image() else puzzle.image
-      scope.puzzlePartToggle = (() -> part.visible = !part.visible) if not attrs.puzzlePartToggle
-      piece.remove() if piece
-      piece = makePuzzlePiece(image, part.figure, attrs.puzzlePartSize).appendTo(el).show()
-      if $(el).css('position') == 'absolute'
-        $(el).css left: part.figure.x, top: part.figure.y
+    scope.progress = tasksService.getProjectProgress
+
+
+app.directive 'ngEnter', ->
+  (scope, el, attrs) ->
+    el.keydown (e) ->
+      if e.which == 13
+        scope.$apply ->
+          scope.$eval attrs.ngEnter
 

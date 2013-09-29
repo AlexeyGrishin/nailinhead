@@ -1,0 +1,44 @@
+<div class="top-panel">
+    <a href="#/" class="back">&nbsp;</a>
+    <h3>{{ project.name }}</h3>
+    <div class="buttons">
+        <button class="btn btn-primary add-new-task"
+                dialog-panel-trigger="addTaskDialog"
+                >Add new task</button>
+        <button class="btn btn-danger btn-drop-area delete-task">
+            Drop to delete
+        </button>
+    </div>
+
+</div>
+
+
+<div class="data">
+<ul class="tasks-list">
+    <li ng-repeat="task in project.tasks"
+        delete-to="delete-task"
+        on-delete="deleteTask(task)"
+        ng-class="task.status">
+        <input type="checkbox"
+               ng-disabled="task.is('unavailable')"
+               ng-checked="task.is('completed')"
+               ng-click="toggleTask(task)"
+                />
+        <strong
+                >{{task.title}}</strong>
+        <section>
+            <em>{{task.cost}}</em>
+        </section>
+
+    </li>
+    <li ng-show="addTaskDialog">
+        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line" on-save="addTask()" >
+            <label>
+                <input ng-model="newTask.title"/><br/>
+            </label>
+            <span class="hint">Enter cost at the end after ',' or ' ', like this: <b>Buy a refrigerator, $200</b></span>
+        </dialog-panel>
+    </li>
+
+</ul>
+</div>

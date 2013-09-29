@@ -1,0 +1,98 @@
+@import "consts";
+@import "elements";
+
+.bg-with-hover(@bg) {
+  background-color: @bg;
+  .transition-duration();
+  &:hover {
+    .box-shadow(0 0 4px darken(@bg, 50%));
+  }
+  &:active {
+    background-color: darken(@bg, 5%);
+  }
+}
+
+.pressed-button {
+  .transform(translate(1px,1px));
+}
+
+///buttons
+.btn {
+  font-variant: small-caps;
+  font-size: @fontBig;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  &:active {
+    .pressed-button();
+  }
+
+  &.btn-primary {
+    .bg-with-hover(@goldLight);
+    color: @goldDark;
+  }
+  &.btn-danger {
+    .bg-with-hover(@redLight);
+    color: @redDark;
+  }
+  &.btn-drop-area {
+    .opacity(0.5);
+    &.ready-to-drop {
+      opacity: 1;
+      .box-shadow(0 0 4px darken(@redDark, 50%));
+    }
+    &:hover {
+      .box-shadow(none);
+      cursor: default;
+    }
+  }
+}
+
+button.link {
+  .btn();
+  background: none;
+  color: @defPanelFg;
+  text-decoration: underline;
+}
+
+/// forms
+.dialog-panel {
+  width: 100%;
+  .transition-duration();
+  opacity: 0;
+  height: 0;
+  form {
+    padding: 10px;
+  }
+  .buttons {
+    text-align: right;
+    padding: 10px;
+  }
+  &.shown {
+    height: 100%;
+    opacity: 1;
+  }
+  background-color: @defPanelBg;
+
+  &.one-line {
+    .dialog-content {
+      float: left;
+      height: 30px;
+      line-height: 30px;
+    }
+    .buttons {
+      float: left;
+      height: 30px;
+      line-height: 30px;
+      padding-top: 0;
+      padding-right: 0;
+      padding-left: 10px;
+      padding-bottom: 0;
+    }
+  }
+}
+
+.btn.dialog-trigger-pressed {
+  background-color: @defPanelBg;
+  color: white;
+}

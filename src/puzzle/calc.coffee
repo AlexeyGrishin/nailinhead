@@ -82,74 +82,91 @@ generatePuzzle = (rows, cols, items) ->
   lastCol = items.length % cols
   checkCorner = (configuration, row, col, idx) ->
     configuration[TOP] = PLAIN if row == 0
-    configuration[BOTTOM] = PLAIN if row == rows - 1 or (row == rows - 2 and lastCol > 0 && col >= lastCol)
+    configuration[BOTTOM] = PLAIN if row == rows - 1 or (row == rows - 2 and lastCol > 0 && col >= lastCol) or idx == count - 1
     configuration[LEFT] = PLAIN if col == 0
     configuration[RIGHT] = PLAIN if col == cols - 1 or idx == count - 1
 
   puzzleMap = [0...rows].map -> [0...cols].map -> {}
-  items.map (item, idx) ->
-    row = Math.floor(idx / cols)
-    col = idx % cols
+  items.forEach ({col, row}) ->
     puzzleMap[row][col].bottom = random()
     puzzleMap[row][col].right = random()
+  items.map (item, idx) ->
+    row = item.row
+    col = item.col
     configuration = ["-","-","-","-"]
     configuration[BOTTOM] = puzzleMap[row][col].bottom
     configuration[TOP] = invert(puzzleMap[row-1][col].bottom) if row > 0
     configuration[RIGHT] = puzzleMap[row][col].right
     configuration[LEFT] = invert(puzzleMap[row][col-1].right) if col > 0
     checkCorner configuration, row, col, idx
+    console.log "#{item.data.title} at #{row}, #{col}, #{col == cols-1}, #{configuration.join('')}"
     configuration = configuration.join("")
-    {col, row, configuration, idx}
+    {col, row, configuration}
 
 
 fitInSquare = (parts) ->
-  sq = Math.ceil(Math.sqrt(parts.length))
+  parts = parts.length if parts.length isnt undefined
+  sq = Math.ceil(Math.sqrt(parts))
   cols = sq
-  rows = Math.ceil(parts.length / cols)
+  rows = Math.ceil(parts / cols)
   return {cols, rows}
 
 
-splitPicture = (width, height, pad, parts) ->
-  squareGenerator = (rows, cols, parts) ->
-    (x, y, partSize, idx) ->
+distributePartsOnPicture = (newObjects, oldParts = [], oldCols = 0, oldRows = 0) ->
+  {cols, rows} = fitInSquare oldParts.length + newObjects.length
+  # new parts shall be distributed in new col/row
+  busyCells = []
+  oldParts.forEach ({col, row}) ->
+    busyCells[row] = busyCells[row] ? []
+    busyCells[row][col] = true
+
+  parts = oldParts.slice()
+  objects = newObjects.slice()
+  addToNewRowOrCol = cols > oldCols or rows > oldRows
+  [0...rows].forEach (row) ->
+    return if objects.length == 0
+    [0...cols].forEach (col) ->
+      return if objects.length == 0
+      return if busyCells[row]?[col]
+      return if addToNewRowOrCol and row < oldRows and col < oldCols
+      #console.log "Locate object #{objects[0].title} at #{col},#{row}"
+      parts.push {
+        data: objects.shift()
+        row: row
+        col: col
+      }
+  throw new Error("Cannot locate objects: #{objects}") if objects.length > 0
+  cols: cols
+  rows: rows
+  parts: parts
+
+
+
+splitPicture = (width, height, pad, objects, oldParts = []) ->
+  squareGenerator = (rows, cols, objects) ->
+    (x, y, partSize, col, row) ->
       square(x, y, partSize)
 
-  puzzleGenerator = (rows, cols, parts) ->
-    puzzleItems = generatePuzzle(rows, cols, parts)
-    (x, y, partSize, idx) ->
-      puzzle p(x,y), size(partSize, partSize), partSize/4, puzzleItems[idx].configuration
+  puzzleGenerator = (rows, cols, objects) ->
+    puzzleItems = generatePuzzle(rows, cols, objects)
+    (x, y, partSize, col, row) ->
+      puzzle p(x,y), size(partSize, partSize), partSize/4, puzzleItems.filter((pi)-> pi.col == col and pi.row == row)[0].configuration
 
   generator = puzzleGenerator
 
   realwidth = width - 2*pad
   realheight = height - 2*pad
-  {cols, rows} = fitInSquare parts
+  oldCols = 1 + Math.max.apply(null, oldParts.map (o) -> o.col) ? 0
+  oldRows = 1 + Math.max.apply(null, oldParts.map (o) -> o.row) ? 0
+  {cols, rows, parts} = distributePartsOnPicture objects, oldParts, oldCols, oldRows
   partSize = Math.min(realwidth / cols, realheight / rows)
   startx = (realwidth - partSize * cols) / 2 + pad
   starty = (realheight - partSize * rows) / 2 + pad
   generateFigure = generator(rows, cols, parts)
   size: partSize
   parts: parts.map (part, idx) ->
-    y = Math.floor(idx / cols)
-    x = idx % cols
-    data: part
-    figure: generateFigure x*partSize + startx, y*partSize + starty, partSize, idx
-
-###
-$ ->
-  cv = $("<canvas></canvas>").prependTo($("body"))
-  ctx = cv[0].getContext("2d")
-  drawPuzzle = (x, y, color, config) ->
-    ctx.beginPath()
-    ctx.fillStyle = color
-    puzzle(p(x, y), size(20, 20), 5, config).draw ctx
-    ctx.fill()
-  items = [0...3]
-  {rows, cols} = fitInSquare items
-  color = ["red", "blue", "green", "gold"]
-  generatePuzzle(rows, cols, items).forEach ({col, row, idx, configuration}) ->
-    drawPuzzle col*20, row*20, color[idx%color.length], configuration
-###
+    part.figure = generateFigure(part.col*partSize + startx, part.row*partSize + starty, partSize, part.col, part.row)
+    part
 
 module.exports =
   p: p

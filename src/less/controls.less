@@ -16,6 +16,21 @@
   .transform(translate(1px,1px));
 }
 
+.btn-primary() {
+  .bg-with-hover(@goldLight);
+  color: @goldDark;
+}
+
+.btn-danger {
+  .bg-with-hover(@redLight);
+  color: @redDark;
+}
+
+.btn-disabled {
+  background-color: @grayLight ;
+  color: @grayDark;
+}
+
 ///buttons
 .btn {
   font-variant: small-caps;
@@ -28,18 +43,19 @@
   }
 
   &.btn-primary {
-    .bg-with-hover(@goldLight);
-    color: @goldDark;
+    .btn-primary();
   }
   &.btn-danger {
-    .bg-with-hover(@redLight);
-    color: @redDark;
+    .btn-danger();
   }
   &.btn-drop-area {
     .opacity(0.5);
     &.ready-to-drop {
       opacity: 1;
       .box-shadow(0 0 4px darken(@redDark, 50%));
+    }
+    &.drop-here {
+      opacity: 1;
     }
     &:hover {
       .box-shadow(none);
@@ -62,7 +78,8 @@ button.link {
   opacity: 0;
   height: 0;
   form {
-    padding: 10px;
+    padding: 0;
+    display: none;
   }
   .buttons {
     text-align: right;
@@ -71,6 +88,12 @@ button.link {
   &.shown {
     height: 100%;
     opacity: 1;
+    z-index: 5;
+    form {
+      padding: 10px;
+      height: 100%;
+      display: block;
+    }
   }
   background-color: @defPanelBg;
 
@@ -89,6 +112,26 @@ button.link {
       padding-left: 10px;
       padding-bottom: 0;
     }
+  }
+}
+
+input{
+  .transition-duration();
+  border: white 1px solid;
+  font-size: @fontBig;
+  padding: 4px 10px;
+
+  &.input-long {
+    width: 200px;
+  }
+
+  &.input-short {
+    width: 50px;
+  }
+
+  &:active {
+    border: @goldDark 1px solid;
+    .inner-shadow();
   }
 }
 

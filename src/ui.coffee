@@ -21,19 +21,31 @@ module.exports = (app) ->
       $(el).click ->
         toggle scope, attrs.dialogPanelTrigger
 
-  app.directive 'dialogPanel', ($rootScope) ->
-    $rootScope.dialog = (id) ->
-      $("*[show-if=" + id + "]").data("dialog")
+  #TODO: delete
+  app.directive 'dialogPanelRef', ->
+    scope:
+      showIf: "@"
+    link: (scope, el, attrs) ->
+      adialog = getDialog(attrs.dialogPanelRef)
+      scope.$parent.$watch attrs.showIf, (newVal) ->
+        if newVal then adialog.showAt(el) else adialog.hideIfAt(el)
 
+  getDialog = (id) ->
+    $("*[show-if=" + id + "]").data("dialog")
+
+
+  app.directive 'dialogPanel', ->
     transclude: true
     restrict: 'E'
     replace: true
     scope:
-      showIf: "@"
       onSave: "&"
       onClose: "&"
+      onHide: "&"
       saveButtonTitle: "="
       cancelButtonTitle: "="
+      doNotClearForm: "@"
+
     template:
       """
       <div class="dialog-panel" ng-class="{shown: showIf}">
@@ -49,9 +61,9 @@ module.exports = (app) ->
     link: (scope, el, attrs) ->
       dialog =
         form: el.find("form")
+        origin: el.parent()
 
-        show: ->
-          setVal scope, attrs.showIf, true
+        _show: ->
           scope.showIf = true
           setTimeout (->
             try
@@ -60,13 +72,28 @@ module.exports = (app) ->
               #ignore
           ), 100
 
+
+        showAt: (element) ->
+          element.append(el) if el.parent[0] != element[0]
+          setTimeout (=>
+            @_show()
+            scope.$apply()
+          ), 0
+
+        show: ->
+          @showAt(@origin)
+
         hide: (callSave, callCancel) ->
-          setVal scope, attrs.showIf, false
           scope.showIf = false
           if callSave and scope.onSave
             scope.onSave()
-          if callCancel and scope.onCancel
-            scope.onCancel()
+          if callCancel and scope.onClose
+            scope.onClose()
+          if scope.onHide
+            scope.onHide()
+
+        hideIfAt: (element) ->
+          @hide() if el.parent()[0] == element[0]
 
         save: ->
           @hide(true)
@@ -77,6 +104,7 @@ module.exports = (app) ->
           @clearForm()
 
         clearForm: ->
+          return if attrs.doNotClearForm isnt undefined
           @form.find("input,textarea").val("")
 
 
@@ -84,8 +112,12 @@ module.exports = (app) ->
       scope.$parent.$watch attrs.showIf, (newVal) ->
         if newVal then dialog.show() else dialog.hide()
 
-      el.find("*[data-action=save]").click -> dialog.save()
-      el.find("*[data-action=cancel]").click -> dialog.cancel()
+      el.find("*[data-action=save]").click ->
+        dialog.save()
+        scope.$apply()
+      el.find("*[data-action=cancel]").click ->
+        dialog.cancel()
+        scope.$apply()
 
 
       el.data "dialog", dialog
@@ -106,7 +138,43 @@ module.exports = (app) ->
         accept: "." + cls
         tolerance: "touch"
         hoverClass: "ready-to-drop"
+        activate: ->
+          deleteTo.addClass("drop-here")
+        deactivate: ->
+          deleteTo.removeClass("drop-here")
         drop: (e, ui) ->
           ui.draggable.data("onDrop")()
 
       }
+
+
+  app.directive 'currency', ->
+    template: "<span class='currency'>{{currency}}</span>"
+    restrict: 'E'
+
+
+  app.directive 'countdown', ->
+    (scope, el, attrs) ->
+      to = null
+      target = null
+      val = 0
+      scope.$watch attrs.countdown, (newVal) ->
+        clearTimeout(to)
+        target = newVal
+        el.addClass("start-counting")
+        doStep = ->
+          if target == val
+            el.removeClass("start-counting")
+          step = scope.$eval(attrs.step) ? 1
+          if target > val
+            val += step
+            val = target if val > target
+          else
+            val -= step
+            val = target if val < target
+          el.val(val)
+          to = setTimeout doStep, 10
+        doStep()
+
+  {getDialog}
+

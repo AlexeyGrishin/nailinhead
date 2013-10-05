@@ -10,17 +10,17 @@
     <link rel="stylesheet" href="css/main.css"/>
     <link rel="icon" type="image/png" href="/favicon.ico" />
 </head>
-<body>
+<body ng-controller="global">
     <div class="header" ng-controller="header">
         <div class="header-content">
+            <div class="budget" title="Edit current budget">
+                <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
+            </div>
             <a href="/">
                 <img src="img/logo.svg"/>
                 <h3>nailinhead</h3>
             </a>
 
-            <div class="budget" title="Edit current budget">
-                $ <input ng-model="budget.amount"/>
-            </div>
         </div>
     </div>
     <div class="main-content" ng-view>

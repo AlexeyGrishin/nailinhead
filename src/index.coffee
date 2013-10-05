@@ -6,10 +6,15 @@ app.service 'tasksService', ->
   tasksService
 
 require './test'
-(require './ui')(app)
+{getDialog} = (require './ui')(app)
+
+app.controller 'global', ($scope, tasksService) ->
+  $scope.currency = tasksService.options.currency
 
 app.controller 'header', ($scope, tasksService) ->
   $scope.budget = tasksService.budget
+  $scope.$watch 'currency', (newVal) ->
+    tasksService.setCurrency(newVal) if newVal
   $scope.$watch 'budget.amount', (newVal) ->
     tasksService.setBudget newVal
 
@@ -31,20 +36,52 @@ app.controller 'projects', (tasksService, $scope, $location) ->
 
 
 app.controller 'project', (tasksService, $scope, $routeParams) ->
+
+  $scope.actionTitle =
+    available: "Upgrade"
+    completed: "Downgrade"
+    unavailable: "Locked"
+
   projectId = $routeParams.project
   tasksService.selectProject(projectId)
   tasksService.updateStatus()
   $scope.currentTask = {}
   $scope.newTask = {title: ""}
   $scope.addTask = ->
-    tasksService.addTask $scope.newTask.title if $scope.newTask.title
-    $scope.dialog('addTaskDialog').show()
+    tasksService.addTask $scope.newTask.title, $scope.newTask.cost if $scope.newTask.title
+    setTimeout (->
+      $scope.addTaskDialog = true
+      $scope.$apply()
+    ), 0
   $scope.deleteTask = (task) ->
     tasksService.deleteTask task
-    $scope.$apply()
-  $scope.project = tasksService.project
   $scope.toggleTask = (task) ->
     tasksService.toggle(task)
+
+  $scope.project = tasksService.project
+  if ($scope.project.tasks.length == 0)
+    $scope.addTaskDialog = true
+
+  # editing
+  $scope.taskInEdit = null
+  $scope.editTask = (task) ->
+    wasEdited = $scope.isInEdit(task)
+    $scope.cancelEdit()
+    return if wasEdited
+    $scope.taskInEdit = {
+      original: task,
+      edited: $.extend {}, task
+    }
+
+  $scope.cancelEdit = ->
+    $scope.taskInEdit = null
+  $scope.saveTask = (task) ->
+    task.title = $scope.taskInEdit.edited.title
+    task.cost = $scope.taskInEdit.edited.cost
+    tasksService.saveTask(task)
+    $scope.cancelEdit()
+  $scope.isInEdit = (task) ->
+    $scope.taskInEdit?.original is task
 
 
 
@@ -68,3 +105,5 @@ app.directive 'ngEnter', ->
         scope.$apply ->
           scope.$eval attrs.ngEnter
 
+app.directive 'editTask', ->
+  (scope, el, attrs) ->

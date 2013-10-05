@@ -1,13 +1,13 @@
-@import 'main.less';
-
 // project page
 a.back {
   display: inline-block;
   background: url(/img/left_round.png);
-  width: 26px;
   height: 26px;
   margin: 4px;
   text-decoration: none;
+  background-repeat: no-repeat;
+  padding-left: 26px;
+  color: black;
   &:active {
     .pressed-button();
   }
@@ -15,28 +15,32 @@ a.back {
 
 ul.tasks-list {
   list-style: none;
+  padding-left: 0;
 
   li {
+    .transition-duration();
     min-height: 50px;
     width: 100%;
     position: relative;
     border-bottom: 1px solid #cccccc;
-    > input {
-      display: block;
-      position: absolute;
-      left: -30px;
-      top: 15px;
-
-    }
     > strong {
-      position: absolute;
       display: block;
       line-height: 50px;
-      top: 0;
-      bottom: 0;
-      left: 0;
-      right: 100px;
+      margin-right: 100px;
       font-size: @fontBigger;
+      padding-left: 30px;
+
+      &:hover {
+        background-image: url(/img/pencil.png);
+        background-position: 6px center;
+        background-repeat: no-repeat;
+        cursor: pointer;
+      }
+    }
+
+    > div.dialog-panel {
+      width: auto;
+      margin-left: 20px;
     }
 
     > section {
@@ -45,11 +49,14 @@ ul.tasks-list {
       top: 0;
       bottom: 0;
       right: 10px;
-      width: 100px;
+      width: 200px;
+      button {
+        width: 90px;
+      }
       em {
         height: 30px;
         display: inline-block;
-        width: 100%;
+        width: 106px;
         line-height: 30px;
         font-size: @fontBigger;
         font-style: normal;
@@ -67,7 +74,13 @@ ul.tasks-list {
       }
     }
 
+
+
     &.completed {
+      background-color: @greenPanel;
+      section button {
+        .btn-danger();
+      }
       strong, em {
         text-decoration: line-through;
         font-style: italic;
@@ -79,6 +92,9 @@ ul.tasks-list {
     }
 
     &.unavailable {
+      section button {
+        .btn-disabled();
+      }
       strong, em {
         color: gray;
       }
@@ -89,6 +105,11 @@ ul.tasks-list {
     }
 
     &.available {
+      background-color: @goldPanel;
+      section button {
+        .btn-primary();
+      }
+
       em {
         color: @goldDark;
       }
@@ -101,11 +122,3 @@ ul.tasks-list {
   }
 }
 
-.add-task-dialog.dialog-panel {
-  .dialog-content {
-    line-height: 15px;
-  }
-  input {
-    width: 350px;
-  }
-}

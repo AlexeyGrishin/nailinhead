@@ -2,8 +2,9 @@
 class Budget
   constructor: (@amount) ->
   set: (@amount) ->
-  increase: (delta) -> @set @amount + delta
-  decrease: (delta) -> @set @amount - delta
+    @amount = parseFloat(@amount)
+  increase: (delta) -> @set @amount + parseFloat(delta)
+  decrease: (delta) -> @set @amount - parseFloat(delta)
 
   isEnoughFor: (money) ->
     money <= @amount
@@ -34,7 +35,7 @@ class Task
 task = (title, cost, status) -> new Task(title, cost, status)
 
 parseString = (str, cost) ->
-  return {name:str, cost:cost} if cost isnt undefined
+  return {name:str, cost:cost} if cost
   if str.indexOf(',') != -1 or str.indexOf(' ') != -1
     ci = Math.max str.lastIndexOf(','), str.lastIndexOf(' ')
 
@@ -54,8 +55,13 @@ Storage =
   loadBudget: ->
     parseSafe(localStorage?.budget) ? []
 
+  loadOptions: ->
+    parseSafe(localStorage?.options) ? {}
+
+  saveOptions: (options) ->
+    localStorage.options = JSON.stringify(options) if localStorage
+
   saveProjects: (projects) ->
-    console.log JSON.stringify(projects)
     localStorage.projects = JSON.stringify(projects) if localStorage
 
   saveBudget: (budget) ->
@@ -65,11 +71,13 @@ TasksService =
   project: {}
   budget: new Budget(250)
   projects: []
+  options: {currency: "$"}
 
   load: ->
     @projects = Storage.loadProjects()
     @projects.forEach (p) -> p.tasks = p.tasks.map (t) -> new Task(t.title, t.cost, t.status)
     @setBudget Storage.loadBudget()
+    @options = Storage.loadOptions()
     ###
     @projects = [{
       id: 1,
@@ -85,9 +93,14 @@ TasksService =
 
     ###
 
+  setCurrency: (c) ->
+    @options.currency = c
+    @save()
+
   save: ->
     Storage.saveProjects(@projects)
     Storage.saveBudget(@budget.amount)
+    Storage.saveOptions(@options)
 
   _nextId: ->
     return 1 if @projects.length == 0
@@ -127,6 +140,7 @@ TasksService =
   deleteTask: (task) ->
     return if not @project.id
     @project.tasks.splice @project.tasks.indexOf(task), 1
+    @save()
 
   _addTask: (task) ->
     @project.tasks.push task
@@ -134,7 +148,9 @@ TasksService =
     task
 
 
-
+  saveTask: (task) ->
+    #do nothing special
+    @save()
 
   toggle: (task) ->
     if task.is "completed"

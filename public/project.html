@@ -1,6 +1,5 @@
 <div class="top-panel">
-    <a href="#/" class="back">&nbsp;</a>
-    <h3>{{ project.name }}</h3>
+    <h3><a href="#/" class="back">&nbsp; {{ project.name }}</a></h3>
     <div class="buttons">
         <button class="btn btn-primary add-new-task"
                 dialog-panel-trigger="addTaskDialog"
@@ -14,29 +13,45 @@
 
 
 <div class="data">
+    <div class="empty-case" ng-show="project.tasks.length == 0">
+    <ul>
+        <li>Add your task!</li>
+    </ul>
+    </div>
 <ul class="tasks-list">
     <li ng-repeat="task in project.tasks"
         delete-to="delete-task"
         on-delete="deleteTask(task)"
         ng-class="task.status">
-        <input type="checkbox"
-               ng-disabled="task.is('unavailable')"
-               ng-checked="task.is('completed')"
-               ng-click="toggleTask(task)"
-                />
-        <strong
-                >{{task.title}}</strong>
+        <strong ng-click="editTask(task)">
+            {{task.title}}
+        </strong>
         <section>
-            <em>{{task.cost}}</em>
+            <button class="btn" ng-disabled="task.is('unavailable')" ng-click="toggleTask(task)">{{actionTitle[task.status]}}</button>
+            <em> <currency/>  {{task.cost}}</em>
         </section>
+        <dialog-panel show-if="isInEdit(task)"
+                      class="edit-task-dialog one-line"
+                      do-not-clear-form
+                      on-save="saveTask(task)" on-close="cancelEdit()" >
+            <label>
+                <input ng-model="taskInEdit.edited.title" class="input-long"/>
+            </label>
+            <label>
+                <currency/> <input ng-model="taskInEdit.edited.cost" class="input-short"/>
+            </label>
+        </dialog-panel>
 
     </li>
     <li ng-show="addTaskDialog">
-        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line" on-save="addTask()" >
+        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line" on-save="addTask()" on-hide="addTaskDialog=false" >
             <label>
-                <input ng-model="newTask.title"/><br/>
+                <input ng-model="newTask.title" class="input-long"/>
             </label>
-            <span class="hint">Enter cost at the end after ',' or ' ', like this: <b>Buy a refrigerator, $200</b></span>
+            <label>
+                <currency/> <input ng-model="newTask.cost" class="input-short"/>
+            </label>
+            <span class="hint">You may enter cost at the end after ',' or ' ', like this: <b>Buy a refrigerator, $200</b></span>
         </dialog-panel>
     </li>
 

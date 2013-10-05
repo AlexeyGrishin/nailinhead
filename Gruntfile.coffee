@@ -19,7 +19,7 @@ module.exports = (grunt) ->
     less:
       dev:
         files:
-          "public/css/main.css": ["src/less/**/*.less"]
+          "public/css/main.css": ["src/less/**/main.less"]
           "public/css/test.css": ["src/less/**/test.less"]
     watch:
       coffee:

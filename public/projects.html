@@ -10,17 +10,23 @@
         </button>
     </div>
 
-    <dialog-panel show-if="addProjectDialog" class="add-project-dialog" on-save="addProject()">
+    <dialog-panel show-if="addProjectDialog" class="add-project-dialog" on-save="addProject()" on-hide="addProjectDialog=false">
         <label>
             New project name:
-            <input ng-model="newProject.title"/>
+            <input ng-model="newProject.title" class="input-long"/>
         </label>
     </dialog-panel>
 </div>
 
 <div class="data">
+    <div class="empty-case" ng-show="projects.length == 0">
+        <ul>
+            <li>Create your first project first!</li>
+        </ul>
+    </div>
     <ul class="projects-list clearfix">
-        <li ng-repeat="project in projects" project-thumb="project" delete-to="delete-project" on-delete="deleteProject(project)">
+        <li ng-repeat="project in projects"  delete-to="delete-project" on-delete="deleteProject(project)">
+            <div project-thumb="project"></div>
         </li>
     </ul>
 </div>

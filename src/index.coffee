@@ -14,6 +14,9 @@ require './test'
 (require './auth/auth')(app)
 
 app.controller 'global', ($scope, tasksService, backend, auth, $location) ->
+  $scope.loading = true
+  tasksService.onLoad ->
+    $scope.loading = false
   $scope.options = tasksService.options
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->
@@ -60,6 +63,7 @@ app.controller 'login', ($scope, auth, $location) ->
 
 app.controller 'projects', (tasksService, $scope, $location) ->
   $scope.projects = tasksService.projects
+
   $scope.newProject = {title:""}
   $scope.addProject = ->
     if $scope.newProject.title
@@ -126,17 +130,72 @@ app.controller 'project', (tasksService, $scope, $routeParams) ->
 
 
 
-app.directive 'projectThumb', (tasksService) ->
+app.service 'projectThumbModel', ->
+  create: (project, maxAmountOfTasks) ->
+    getTotal = (project) -> project.tasks.length
+    calculateProgress = (project) ->
+      total = getTotal(project)
+      for status, title of {completed: "tasks completed", available: "tasks ready to be completed", unavailable: "tasks cannot be completed right now"}
+        count = project[status]().length
+        {
+          percent: count / total * 100,
+          amount: count,
+          total: total,
+          name: status,
+          title: "of #{total} #{title}"
+        }
+    calculateTasksToShow = (project) ->
+      availableTasks = project.available()
+      unavailableTasks = project.unavailable()
+      completedTasks = project.completed()
+      total = availableTasks.length + unavailableTasks.length + completedTasks.length
+      tasksToShow = availableTasks.slice().concat(unavailableTasks).slice(0, maxAmountOfTasks)
+      if (tasksToShow.length < availableTasks.length + unavailableTasks.length)
+        tasksToShow.pop()
+        rest = total - maxAmountOfTasks - 1
+        tasksToShow.push {title: "Show the rest #{rest} tasks", status: "more", text: "..."}
+      tasksToShow
+    toggle: (task) ->
+      for prog, index in calculateProgress(project)
+        @progressToShow[index] = prog
+      #TODO: switch when all tasks completed
+    tasksToShow: calculateTasksToShow(project)
+    progressToShow: calculateProgress(project)
+
+
+
+
+app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
+  replace: true
   template:
     """
     <div class="project">
-      <a href="#/{{ project.objectId }}">{{ project.name }} - {{ progress(project).toFixed(0) }} %</a>
+      <div class="task-thumb {{task.status}}"
+           ng-repeat="task in thumb.tasksToShow"
+           ui-title="{{task.title}} [{{options.currency}} {{task.cost}}]"
+           ng-click="click(task)"
+            >
+            {{task.text}}
+      </div>
+      <div class="progress">
+        <span ng-repeat="progress in thumb.progressToShow"
+              class="{{progress.name}}"
+              ui-title="{{progress.amount}} {{progress.title}}"
+              style="width: {{progress.percent + '%'}}"></span>
+      </div>
+      <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
     </div>
     """
   link: (scope, el, attrs) ->
-    scope.progress = tasksService.getProjectProgress
+    scope.thumb = projectThumbModel.create(scope.project, attrs.thumbs ? 9, scope.thumb)
+    scope.click = (task) ->
+      if task.status == "more"
+        $location.path "/#{scope.project.objectId}"
+      else if task.status != "unavailable"
+        tasksService.toggle(task)
+        scope.thumb.toggle(task)
 
 
 app.directive 'ngEnter', ->

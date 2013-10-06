@@ -21,9 +21,10 @@ class Task
     budget.decrease @cost
 
   updateStatus: (budget) ->
-    return @ if @status is "completed"
+    oldStatus = @status
+    return false if @status is "completed"
     @status = if budget.isEnoughFor(@cost) then "available" else "unavailable"
-    @
+    @status != oldStatus
 
   revert: (budget) ->
     throw new Error("Task '#{@title}' cannot be undone - it is not completed") if @status is not "completed"
@@ -52,6 +53,20 @@ clear = (objs...) ->
     else
       angular.copy {}, obj
 
+class Project
+  byStatus: (status) -> @tasks.filter (t) -> t.is(status)
+  completed: -> @byStatus("completed")
+  available: -> @byStatus("available")
+  unavailable: -> @byStatus("unavailable")
+
+toJSON = (obj) ->
+  newObj = angular.copy(obj)
+  for own key, val of newObj
+    delete newObj[key] if $.isFunction(val)
+  newObj
+
+
+
 TasksService = (storage = require('./localStorage')) ->
 
   project: {}
@@ -67,7 +82,9 @@ TasksService = (storage = require('./localStorage')) ->
       return cb(error) if error
       projects.forEach (p) =>
         p.tasks = p.tasks.map (t) -> new Task(t.title, t.cost, t.status)
-        @projects.push p
+        proj = new Project()
+        angular.copy(p, proj)
+        @projects.push proj
       storage.getBudget (budget, error) =>
         return cb(error) if error
         @setBudget(budget?.amount)
@@ -90,7 +107,7 @@ TasksService = (storage = require('./localStorage')) ->
   addProject: (name, image, cb = ->) ->
     proj = {name, image, tasks:[]}
     storage.addProject proj, (project) =>
-      @projects.push project
+      @projects.push new Project(project)
       cb(project)
 
   deleteProject: (project, cb = ->) ->
@@ -117,11 +134,26 @@ TasksService = (storage = require('./localStorage')) ->
 
   updateStatus: ->
     return if not @project.objectId
-    @project.tasks.forEach (t)=>t.updateStatus(@budget)
-    @_saveCurrentProject()
+    @_updateProjectStatus(@project)
+
+  _updateAllProjectStatuses: (forceForTask = null)->
+    @projects.forEach (p) => @_updateProjectStatus(p, forceForTask)
+
+  _updateProjectStatus: (project, forceForTask = null) ->
+    updated = false
+    project.tasks.forEach (t) =>
+      if t.updateStatus(@budget)
+        updated = true
+
+    if updated || project.tasks.indexOf(forceForTask) != -1
+      @_saveProject(project)
+
+  _saveProject: (project) ->
+    console.log "Save project #{project.name}"
+    storage.saveProject toJSON(project) if project.objectId
 
   _saveCurrentProject: ->
-    storage.saveProject angular.copy(@project) if @project.objectId
+    storage.saveProject toJSON(@project) if @project.objectId
 
   addTask: (name, cost) ->
     return if not @project.objectId
@@ -149,12 +181,13 @@ TasksService = (storage = require('./localStorage')) ->
       task.complete @budget
     else
       throw new Error "not.available"
-    @updateStatus()
+    @_updateAllProjectStatuses(task)
+    #TODO: другие проекты тоже надо обновить. но хорошо бы избежать лишних сохранений
 
 
   setBudget: (newValue) ->
     @budget.set parseFloat(newValue)
-    @updateStatus()
+    @_updateAllProjectStatuses()
     storage.setBudget @budget
 
   getProjectProgress: (project) ->

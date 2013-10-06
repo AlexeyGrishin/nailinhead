@@ -6,21 +6,94 @@ ul.projects-list {
     padding: 10px;
     float: left;
     display: block;
-    & > div {
+    & > div.project {
+      position: relative;
       width: 200px;
-      height: 200px;
-      padding: 5px;
+      height: 230px;
+      padding: 10px;
       .box-sizing(border-box);
       font-size: @fontBigger;
+      background-color: #ccc;
       .bordered(#ccc,#ccc,#ccc,#ccc);
       .transition-duration();
 
-      &> a {
+      > strong {
+        position: absolute;
+        bottom: 15px;
+        left: 0;
+        right: 0;
+        height: 30px;
+        line-height: 30px;
         text-align: center;
         display: block;
-        line-height: 100px;
-        width: 100%;
-        height: 100%;
+        overflow: hidden;
+        > a {
+          color: black;
+          text-overflow: ellipsis;
+        }
+      }
+
+      > .progress {
+        position: absolute;
+        bottom: 1px;
+        left: 1px;
+        right: 1px;
+        height: 15px;
+        > span {
+          .transition-duration();
+          display: inline-block;
+          height: 100%;
+          box-sizing: border-box;
+          &.completed {
+            background-color: @greenLight;
+          }
+          &.available {
+            background-color: @goldLight;
+          }
+
+        }
+      }
+
+      > .task-thumb {
+        float: left;
+        width: 40px;
+        height: 40px;
+        margin: 7px;
+        border: 2px solid @grayLight;
+        .transition-duration();
+
+        &.available, &.completed, &.more {
+          cursor: pointer;
+          &:hover {
+            border-color: @goldDark;
+          }
+        }
+
+
+        &.more {
+          text-align: center;
+          line-height: 40px;
+          background-color: @grayLight;
+          color: @grayDark;
+          border: 1px @grayDark dotted;
+        }
+
+      }
+
+      .completed {
+        background-color: @greenPanel;
+        &:hover {
+          background-color: @greenLight;
+        }
+      }
+      .available {
+        background-color: @goldPanel;
+        &:hover {
+          background-color: @goldLight;
+        }
+      }
+      .unavailable {
+        background-color: @grayPanel;
       }
 
       &:hover {

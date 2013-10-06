@@ -62,6 +62,7 @@ Backend =
   getProjects: (cb) ->
     pq = new Parse.Query(Project)
     pq.equalTo("owner", Parse.User.current())
+    pq.ascending("createdAt")
     pq.find @defaultHandler (projects) =>
       @projects = projects
       cb(projects.map (p) -> p.toJSON())
@@ -73,6 +74,8 @@ Backend =
     project.save null, @defaultHandler (project) -> cb(project.toJSON())
 
   saveProject: (projectData, cb) ->
+    if projectData.completed
+      projectData = projectData
     projectObject = new Project(projectData)
     projectObject.save null, @defaultHandler(cb)
 

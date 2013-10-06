@@ -174,5 +174,9 @@ module.exports = (app) ->
           to = setTimeout doStep, 10
         doStep()
 
+  app.directive 'uiTitle', ->
+    (scope, el, attrs) ->
+      el.tooltip title: -> attrs.uiTitle
+
   {getDialog}
 

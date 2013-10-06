@@ -19,7 +19,10 @@
 </div>
 
 <div class="data">
-    <div class="empty-case" ng-show="projects.length == 0">
+    <div class="loading" ng-show="loading">
+        Loading, please wait...
+    </div>
+    <div class="empty-case" ng-show="projects.length == 0 && !loading">
         <ul>
             <li>Create your first project first!</li>
         </ul>

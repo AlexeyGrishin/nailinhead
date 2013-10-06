@@ -21,14 +21,6 @@ module.exports = (app) ->
       $(el).click ->
         toggle scope, attrs.dialogPanelTrigger
 
-  #TODO: delete
-  app.directive 'dialogPanelRef', ->
-    scope:
-      showIf: "@"
-    link: (scope, el, attrs) ->
-      adialog = getDialog(attrs.dialogPanelRef)
-      scope.$parent.$watch attrs.showIf, (newVal) ->
-        if newVal then adialog.showAt(el) else adialog.hideIfAt(el)
 
   getDialog = (id) ->
     $("*[show-if=" + id + "]").data("dialog")
@@ -149,7 +141,7 @@ module.exports = (app) ->
 
 
   app.directive 'currency', ->
-    template: "<span class='currency'>{{currency}}</span>"
+    template: "<span class='currency'>{{options.currency}}</span>"
     restrict: 'E'
 
 
@@ -158,13 +150,19 @@ module.exports = (app) ->
       to = null
       target = null
       val = 0
+      inFocus = false
+      el.on('focus', -> inFocus = true).on('blur', -> inFocus = false)
       scope.$watch attrs.countdown, (newVal) ->
         clearTimeout(to)
+        return if inFocus
         target = newVal
         el.addClass("start-counting")
         doStep = ->
+          if inFocus
+            val = target
           if target == val
             el.removeClass("start-counting")
+            return
           step = scope.$eval(attrs.step) ? 1
           if target > val
             val += step

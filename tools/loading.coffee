@@ -17,3 +17,8 @@ $ ->
   $body = $("body")
   $body.html("Building.")
   checkNewJs()
+
+
+# to avoid angular errors
+
+angular.module('puzzle', []).controller('global').controller('header')

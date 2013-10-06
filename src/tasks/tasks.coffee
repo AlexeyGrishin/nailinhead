@@ -3,6 +3,7 @@ class Budget
   constructor: (@amount) ->
   set: (@amount) ->
     @amount = parseFloat(@amount)
+    @amount = 0 if isNaN(@amount)
   increase: (delta) -> @set @amount + parseFloat(delta)
   decrease: (delta) -> @set @amount - parseFloat(delta)
 
@@ -44,113 +45,102 @@ parseString = (str, cost) ->
       return name: str.substring(0, ci), cost: probablyCost
   name: str, cost: 0
 
-parseSafe = (val) ->
-  return undefined if val is undefined
-  JSON.parse(val)
+clear = (objs...) ->
+  for obj in objs
+    if obj.splice
+      obj.splice(0, obj.length)
+    else
+      angular.copy {}, obj
 
-Storage =
-  loadProjects: () ->
-    parseSafe(localStorage?.projects) ? []
+TasksService = (storage = require('./localStorage')) ->
 
-  loadBudget: ->
-    parseSafe(localStorage?.budget) ? []
-
-  loadOptions: ->
-    parseSafe(localStorage?.options) ? {}
-
-  saveOptions: (options) ->
-    localStorage.options = JSON.stringify(options) if localStorage
-
-  saveProjects: (projects) ->
-    localStorage.projects = JSON.stringify(projects) if localStorage
-
-  saveBudget: (budget) ->
-    localStorage.budget = JSON.stringify(budget) if localStorage
-
-TasksService =
   project: {}
-  budget: new Budget(250)
+  budget: new Budget(0)
   projects: []
-  options: {currency: "$"}
+  options: {}
+  loading: true
 
-  load: ->
-    @projects = Storage.loadProjects()
-    @projects.forEach (p) -> p.tasks = p.tasks.map (t) -> new Task(t.title, t.cost, t.status)
-    @setBudget Storage.loadBudget()
-    @options = Storage.loadOptions()
-    ###
-    @projects = [{
-      id: 1,
-      name: "Puzzle project",
-      image: "/img/pic1.jpg",
-      tasks: [
-        task("Create puzzle control", 0, "completed"),
-        task("Make project page", 200),
-        task("Make projects list", 500),
-        task("Update styles", 200),
-      ]
-    }]
+  load: (cb) ->
+    clear @project, @projects, @options
+    @loading = true
+    storage.getProjects (projects, error) =>
+      return cb(error) if error
+      projects.forEach (p) =>
+        p.tasks = p.tasks.map (t) -> new Task(t.title, t.cost, t.status)
+        @projects.push p
+      storage.getBudget (budget, error) =>
+        return cb(error) if error
+        @setBudget(budget?.amount)
+        storage.getOptions (options, error) =>
+          angular.copy options, @options if options
+          return cb(error) if error
+          storage.saveCurrentUser()
+          @loading = false
+          $(@).trigger "tasks.loaded"
+          cb()
 
-    ###
-
-  setCurrency: (c) ->
+  setCurrency: (c, cb = ->) ->
     @options.currency = c
-    @save()
-
-  save: ->
-    Storage.saveProjects(@projects)
-    Storage.saveBudget(@budget.amount)
-    Storage.saveOptions(@options)
+    storage.setOptions @options, cb
 
   _nextId: ->
     return 1 if @projects.length == 0
     1 + (Math.max.apply null, @projects.map (p) ->p.id)
 
-  addProject: (name, image) ->
-    proj = {name, image, tasks:[], id: @_nextId()}
-    @projects.push proj
-    @save()
-    proj
+  addProject: (name, image, cb = ->) ->
+    proj = {name, image, tasks:[]}
+    storage.addProject proj, (project) =>
+      @projects.push project
+      cb(project)
 
-  deleteProject: (project) ->
-    @projects.splice @projects.indexOf(project), 1
-    @save()
+  deleteProject: (project, cb = ->) ->
+    storage.deleteProject project, =>
+      @projects.splice @projects.indexOf(project), 1
+      cb()
 
   getProject: (id) ->
-    @projects.filter((p) ->p.id.toString() == id.toString())[0]
+    @projects.filter((p) ->p.objectId.toString() == id.toString())[0]
 
-  selectProject: (project_or_id) ->
-    project = if project_or_id.id then project_or_id else @getProject(project_or_id)
+  onLoad: (cb) ->
+    if @loading
+      $(@).on 'tasks.loaded', cb
+    else
+      cb()
+
+  selectProject: (project_or_id, cb) ->
+    project = if project_or_id.objectId then project_or_id else @getProject(project_or_id)
     for name, value of project
       @project[name] = value
 
   unselectProject: ->
-    @project.id = null
+    @project.objectId = null
 
   updateStatus: ->
-    return if not @project.id
+    return if not @project.objectId
     @project.tasks.forEach (t)=>t.updateStatus(@budget)
-    @save()
+    @_saveCurrentProject()
+
+  _saveCurrentProject: ->
+    storage.saveProject angular.copy(@project) if @project.objectId
 
   addTask: (name, cost) ->
-    return if not @project.id
+    return if not @project.objectId
     {name, cost} = parseString name, cost
     @_addTask task(name, cost).updateStatus(@budget)
 
   deleteTask: (task) ->
-    return if not @project.id
+    return if not @project.objectId
     @project.tasks.splice @project.tasks.indexOf(task), 1
-    @save()
+    @_saveCurrentProject()
 
   _addTask: (task) ->
     @project.tasks.push task
-    @save()
+    @_saveCurrentProject()
     task
 
 
   saveTask: (task) ->
-    #do nothing special
-    @save()
+    @_saveCurrentProject()
 
   toggle: (task) ->
     if task.is "completed"
@@ -165,7 +155,7 @@ TasksService =
   setBudget: (newValue) ->
     @budget.set parseFloat(newValue)
     @updateStatus()
-    @save()
+    storage.setBudget @budget
 
   getProjectProgress: (project) ->
     completed = project.tasks.filter((t) -> t.is "completed").length

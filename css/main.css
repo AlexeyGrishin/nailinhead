@@ -362,7 +362,7 @@ ul.projects-list li > div.project:hover {
 }
 a.back {
   display: inline-block;
-  background: url(/img/left_round.png);
+  background: url(img/left_round.png);
   height: 26px;
   margin: 4px;
   text-decoration: none;
@@ -399,7 +399,7 @@ ul.tasks-list li > strong {
   padding-left: 30px;
 }
 ul.tasks-list li > strong:hover {
-  background-image: url(/img/pencil.png);
+  background-image: url(img/pencil.png);
   background-position: 6px center;
   background-repeat: no-repeat;
   cursor: pointer;

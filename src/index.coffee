@@ -174,10 +174,10 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
     <div class="project">
       <div class="task-thumb {{task.status}}"
            ng-repeat="task in thumb.tasksToShow"
-           ui-title="{{task.title}} [{{options.currency}} {{task.cost}}]"
+           ui-title="{{options.currency}} {{task.cost}}"
            ng-click="click(task)"
             >
-            {{task.text}}
+            {{task.title}}
       </div>
       <div class="progress">
         <span ng-repeat="progress in thumb.progressToShow"

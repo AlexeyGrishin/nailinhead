@@ -1,7 +1,7 @@
 //project list
 ul.projects-list {
   list-style: none;
-
+  @bgColor: #ccc;
   li {
     padding: 10px;
     float: left;
@@ -9,11 +9,11 @@ ul.projects-list {
     & > div.project {
       position: relative;
       width: 200px;
-      height: 230px;
+      height: 250px;
       padding: 10px;
       .box-sizing(border-box);
       font-size: @fontBigger;
-      background-color: #ccc;
+      background-color: @bgColor;
       .bordered(#ccc,#ccc,#ccc,#ccc);
       .transition-duration();
 
@@ -56,10 +56,13 @@ ul.projects-list {
 
       > .task-thumb {
         float: left;
-        width: 40px;
-        height: 40px;
-        margin: 7px;
-        border: 2px solid @grayLight;
+        width: 175px;
+        height: 20px;
+        overflow: hidden;
+        font-size: @fontNormal;
+        //margin: 7px;
+        border: 1px solid @bgColor;
+        text-overflow: ellipsis;
         .transition-duration();
 
         &.available, &.completed, &.more {
@@ -72,10 +75,10 @@ ul.projects-list {
 
         &.more {
           text-align: center;
-          line-height: 40px;
-          background-color: @grayLight;
+          line-height: 20px;
+          background-color: transparent;
           color: @grayDark;
-          border: 1px @grayDark dotted;
+
         }
 
       }

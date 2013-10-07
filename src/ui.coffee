@@ -176,7 +176,7 @@ module.exports = (app) ->
 
   app.directive 'uiTitle', ->
     (scope, el, attrs) ->
-      el.tooltip title: -> attrs.uiTitle
+      el.tooltip placement: "right", title: -> attrs.uiTitle
 
   {getDialog}
 

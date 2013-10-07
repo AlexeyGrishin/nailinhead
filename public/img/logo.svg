@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="84px"
+		height="120px" viewBox="0 0 15.6132 22.5154" xml:space="preserve" color-interpolation-filters="sRGB" class="st3">
+	<v:documentProperties v:langID="1049" v:viewMarkup="false"/>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.72}
+		.st2 {stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.72}
+		.st3 {fill:none;fill-rule:evenodd;font-size:12;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<g v:mID="0" v:index="1" v:groupContext="foregroundPage">
+		<v:pageProperties v:drawingScale="0.0393701" v:pageScale="0.0393701" v:drawingUnits="24" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<g id="group795-1" transform="translate(0.72,-0.72)" v:mID="795" v:groupContext="group">
+			<g id="shape797-2" v:mID="797" v:groupContext="shape">
+				<path d="M1 22.52 L9.03 22.52 L10.04 1.44 L0 2.44 L1 22.52 Z" class="st1"/>
+			</g>
+			<g id="shape808-4" v:mID="808" v:groupContext="shape" transform="translate(2.50898,-17.061)">
+				<ellipse cx="0.501795" cy="22.0136" rx="0.501795" ry="0.501795" class="st1"/>
+			</g>
+			<g id="shape809-6" v:mID="809" v:groupContext="shape" transform="translate(6.52334,-17.061)">
+				<ellipse cx="0.501795" cy="22.0136" rx="0.501795" ry="0.501795" class="st1"/>
+			</g>
+			<g id="shape810-8" v:mID="810" v:groupContext="shape" transform="translate(2.50898,-8.02872)">
+				<path d="M0 16.49 A6.02154 3.01077 -90 0 0 3.01 22.52 A6.02154 2.00718 -90 0 0 5.02 16.49" class="st2"/>
+			</g>
+			<g id="group811-11" transform="translate(4.46824,-15.3244) rotate(-15)" v:mID="811" v:groupContext="group">
+				<g id="shape812-12" v:mID="812" v:groupContext="shape" transform="translate(0,-1.00359)">
+					<path d="M0 22.52 L4.01 22.52" class="st2"/>
+				</g>
+				<g id="shape817-15" v:mID="817" v:groupContext="shape" transform="translate(-18.501,22.5154) rotate(-90)">
+					<path d="M0 22.52 L2.01 22.52" class="st2"/>
+				</g>
+			</g>
+		</g>
+	</g>
+</svg>

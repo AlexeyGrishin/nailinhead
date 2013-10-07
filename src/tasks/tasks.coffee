@@ -158,7 +158,9 @@ TasksService = (storage = require('./localStorage')) ->
   addTask: (name, cost) ->
     return if not @project.objectId
     {name, cost} = parseString name, cost
-    @_addTask task(name, cost).updateStatus(@budget)
+    t = task(name, cost)
+    t.updateStatus(@budget)
+    @_addTask t
 
   deleteTask: (task) ->
     return if not @project.objectId

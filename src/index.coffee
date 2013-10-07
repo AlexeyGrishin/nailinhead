@@ -152,7 +152,7 @@ app.service 'projectThumbModel', ->
       tasksToShow = availableTasks.slice().concat(unavailableTasks).slice(0, maxAmountOfTasks)
       if (tasksToShow.length < availableTasks.length + unavailableTasks.length)
         tasksToShow.pop()
-        rest = total - maxAmountOfTasks - 1
+        rest = total - maxAmountOfTasks + 1
         tasksToShow.push {title: "Show the rest #{rest} tasks", status: "more", text: "..."}
       tasksToShow
     toggle: (task) ->

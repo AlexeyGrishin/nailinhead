@@ -1,0 +1,30 @@
+.test .puzzle-part {
+  float: left;
+  cursor: pointer;
+  margin: 1px;
+}
+.test .puzzle-part.off {
+  opacity: 0.5;
+}
+.test .puzzle-holder {
+  position: relative;
+}
+.test .puzzle-tip {
+  position: absolute;
+  cursor: pointer;
+}
+.test ul {
+  list-style: none;
+}
+.test li {
+  height: 40px;
+  line-height: 40px;
+  padding-bottom: 2px;
+}
+.test li:hover {
+  background-color: #f8ffff;
+}
+.test li div.puzzle-part {
+  width: 50px;
+  height: 40px;
+}

@@ -1,0 +1,63 @@
+<div class="top-panel">
+
+    <h3><a href="#/" class="back">&nbsp; {{ project.name }}</a></h3>
+    <div class="buttons">
+        <button class="btn btn-primary add-new-task"
+                dialog-panel-trigger="addTaskDialog"
+                >Add new task</button>
+        <button class="btn btn-danger btn-drop-area delete-task">
+            Drop to delete
+        </button>
+    </div>
+
+</div>
+
+
+<div class="data">
+    <div class="loading" ng-show="loading">
+        Loading, please wait...
+    </div>
+    <div class="empty-case" ng-show="project.tasks.length == 0 && !loading">
+    <ul>
+        <li>Add your task!</li>
+    </ul>
+    </div>
+<ul class="tasks-list">
+    <li ng-repeat="task in project.tasks"
+        delete-to="delete-task"
+        on-delete="deleteTask(task)"
+        ng-class="task.status">
+        <strong ng-click="editTask(task)">
+            {{task.title}}
+        </strong>
+        <section>
+            <button class="btn" ng-disabled="task.is('unavailable')" ng-click="toggleTask(task)">{{actionTitle[task.status]}}</button>
+            <em> <currency/>  {{task.cost}}</em>
+        </section>
+        <dialog-panel show-if="isInEdit(task)"
+                      class="edit-task-dialog one-line"
+                      do-not-clear-form
+                      on-save="saveTask(task)" on-close="cancelEdit()" >
+            <label>
+                <input ng-model="taskInEdit.edited.title" class="input-long"/>
+            </label>
+            <label>
+                <currency/> <input ng-model="taskInEdit.edited.cost" class="input-short"/>
+            </label>
+        </dialog-panel>
+
+    </li>
+    <li ng-show="addTaskDialog">
+        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line" on-save="addTask()" on-hide="addTaskDialog=false" >
+            <label>
+                <input ng-model="newTask.title" class="input-long"/>
+            </label>
+            <label>
+                <currency/> <input ng-model="newTask.cost" class="input-short"/>
+            </label>
+            <span class="hint">You may enter cost at the end after ',' or ' ', like this: <b>Buy a refrigerator, $200</b></span>
+        </dialog-panel>
+    </li>
+
+</ul>
+</div>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html ng-app="puzzle">
+<head>
+    <meta charset="utf-8"/>
+    <script src="js/jquery.js"></script>
+    <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+    <script src="js/angular.js"></script>
+    <script src="js/parse-1.2.12.js"></script>
+    <script src="js/index.js"></script>
+    <link rel="stylesheet" href="css/humanity/jquery-ui-1.10.3.custom.min.css"/>
+    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <link rel="stylesheet" href="css/main.css"/>
+    <link rel="icon" type="image/png" href="/favicon.ico" />
+</head>
+<body ng-controller="global">
+    <div class="header" ng-controller="header">
+        <div class="header-content">
+            <div class="budget" title="Edit current budget" ng-show="auth.loggedIn">
+                <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
+            </div>
+            <a href="/">
+                <img src="img/logo.svg"/>
+                <h3>nailinhead</h3>
+
+                <loading></loading>
+            </a>
+
+        </div>
+    </div>
+    <div class="main-content" ng-view>
+
+    </div>
+    <div ng-show="auth.loggedIn">
+        {{auth.currentUser.username}} <button ng-click="logout()">Logout</button>
+    </div>
+
+</body>
+</html>

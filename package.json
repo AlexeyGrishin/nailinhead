@@ -12,6 +12,7 @@
     "less": "*",
     "grunt-contrib-watch": "*",
     "karma": "*",
+    "grunt-karma": "*",
     "karma-html-reporter": "*",
     "karma-coffee-preprocessor": "*"
   }

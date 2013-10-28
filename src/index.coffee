@@ -32,6 +32,7 @@ app.controller 'global', ($scope, tasksService, backend, auth, $location) ->
 
 app.controller 'header', ($scope, tasksService) ->
   $scope.budget = tasksService.budget
+  $scope.booking = tasksService.booking
   $scope.$watch 'currency', (newVal) ->
     return unless $scope.auth.loggedIn
     tasksService.setCurrency(newVal) if newVal
@@ -105,6 +106,10 @@ app.controller 'project', (tasksService, $scope, $routeParams) ->
     tasksService.deleteTask task
   $scope.toggleTask = (task) ->
     tasksService.toggle(task)
+  $scope.isBooked = (task) ->
+    tasksService.isBooked(task)
+  $scope.toggleBookingTask = (task) ->
+    tasksService.toggleBooking(task)
 
 
   # editing
@@ -122,7 +127,7 @@ app.controller 'project', (tasksService, $scope, $routeParams) ->
     $scope.taskInEdit = null
   $scope.saveTask = (task) ->
     task.title = $scope.taskInEdit.edited.title
-    task.cost = $scope.taskInEdit.edited.cost
+    task.updateCost($scope.taskInEdit.edited.cost)
     tasksService.saveTask(task)
     $scope.cancelEdit()
   $scope.isInEdit = (task) ->
@@ -205,5 +210,3 @@ app.directive 'ngEnter', ->
         scope.$apply ->
           scope.$eval attrs.ngEnter
 
-app.directive 'editTask', ->
-  (scope, el, attrs) ->

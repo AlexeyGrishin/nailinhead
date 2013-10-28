@@ -13,6 +13,8 @@
     "grunt-contrib-watch": "*",
     "karma": "*",
     "grunt-karma": "*",
+    "karma-jasmine": "*",
+    "karma-chrome-launcher": "*",
     "karma-html-reporter": "*",
     "karma-coffee-preprocessor": "*"
   }

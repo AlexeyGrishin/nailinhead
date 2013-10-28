@@ -1,40 +1,116 @@
 
+toFloat = (something) ->
+  fl = parseFloat(something)
+  fl = 0 if isNaN(fl)
+  fl
+
+
 class Budget
   constructor: (@amount) ->
   set: (@amount) ->
-    @amount = parseFloat(@amount)
-    @amount = 0 if isNaN(@amount)
-  increase: (delta) -> @set @amount + parseFloat(delta)
-  decrease: (delta) -> @set @amount - parseFloat(delta)
+    @amount = toFloat(@amount)
+  increase: (delta) -> @set @amount + toFloat(delta)
+  decrease: (delta) -> @set @amount - toFloat(delta)
 
   isEnoughFor: (money) ->
     money <= @amount
 
+class Group
+  constructor: (@id, @name, @tasks = []) ->
+    @amount = 0
+    @_recalculate()
 
-class Task
-  constructor: (@title, @cost = 0, @status = "") ->
+  #TODO: tasks shall have unique id as well
+  _contains: (task) ->
+    @tasks.indexOf(task) > -1
+    #@tasks.some (t) ->t.id == task.id
+
+  _listedIn: (task) ->
+    task.groups.indexOf(@name) > -1
+
+  _recalculate: ->
+    @amount = @tasks.map((t) -> t.cost).reduce ((a,b)->a+b), 0
+
+  onTaskGroupChange: (task) ->
+    if @_listedIn(task)
+      if not @_contains(task)
+        @tasks.push(task)
+        @amount += toFloat(task.cost)
+    else
+      if @_contains(task)
+        @tasks = @tasks.filter (t) ->t != task
+        @amount -= toFloat(task.cost)
+
+  onTaskCostChange: (task, oldCost, newCost) ->
+    return if not @_listedIn(task)
+    @amount = @amount - toFloat(oldCost) + toFloat(newCost)
+
+  onTaskStatusChange: (task, oldStatus, newStatus) ->
+    return if not @_listedIn(task)
+    if newStatus == "completed"
+      @amount -= toFloat(task.cost)
+    else if oldStatus == "completed"
+      @amount += toFloat(task.cost)
+
+class EventEmitter
+  constructor: ->
+  trigger: (eventName, args...)->
+    $(@).trigger(eventName, args)
+  on: (eventName, listener) ->
+    $(@).on eventName, (event, args...) ->
+      listener(args...)
+  off: (eventName, listener) ->
+    $(@).off(eventName, listener)
+
+TaskEvent =
+  StatusChange: "task_status_change"
+  CostChange: "task_cost_change"
+  GroupChange: "task_groups_change"
+
+class Task extends EventEmitter
+  constructor: (@title, @cost = 0, @status = "", @groups = []) ->
+    super
 
   complete: (budget) ->
     return if @status is "completed"
     throw new Error("Task '#{@title}' cannot be done") if @status is not "available"
-    @status = "completed"
+    @_change "status", "completed"
     budget.decrease @cost
+
+  _change: (field, newVal) ->
+    oldVal = @[field]
+    return if oldVal == newVal
+    @[field] = newVal
+    @trigger "task_#{field}_change", oldVal, newVal
+
+  updateCost: (newCost) ->
+    @_change "cost", newCost
+
+  addToGroup: (groupName) ->
+    @_change "groups", @groups.concat([groupName])
+
+  removeFromGroup: (groupName) ->
+    @_change "groups", @groups.filter (g) ->g != groupName
+
+  isInGroup: (groupName) ->
+    @groups.indexOf(groupName) > -1
 
   updateStatus: (budget) ->
     oldStatus = @status
     return false if @status is "completed"
-    @status = if budget.isEnoughFor(@cost) then "available" else "unavailable"
+    @_change "status", if budget.isEnoughFor(@cost) then "available" else "unavailable"
     @status != oldStatus
 
   revert: (budget) ->
     throw new Error("Task '#{@title}' cannot be undone - it is not completed") if @status is not "completed"
-    @status = ""
+    @_change "status", ""
     budget.increase @cost
     @updateStatus budget
 
   is: (status) -> @status == status
 
-task = (title, cost, status) -> new Task(title, cost, status)
+  toJSON: ->
+
 
 parseString = (str, cost) ->
   return {name:str, cost:cost} if cost
@@ -58,22 +134,58 @@ class Project
   completed: -> @byStatus("completed")
   available: -> @byStatus("available")
   unavailable: -> @byStatus("unavailable")
+  toJSON: ->
+    newObj = angular.copy(@)
+    for own key, val of newObj
+      delete newObj[key] if $.isFunction(val)
+    newObj.tasks = @tasks.map (t) ->t.toJSON()
+    newObj
+
+isInternal = (prop) ->
+  prop.indexOf('_eventObj_') == 0
+
+copyProperties = (obj) ->
+  if angular.isArray(obj)
+    return obj.map (item) -> copyProperties(item)
+  else if angular.isObject(obj)
+    newObj = {}
+    for own key, val of obj
+      newObj[key] = copyProperties(val) unless $.isFunction(val) or isInternal(key)
+    newObj
+  else
+    return obj
+
 
 toJSON = (obj) ->
-  newObj = angular.copy(obj)
-  for own key, val of newObj
-    delete newObj[key] if $.isFunction(val)
-  newObj
+  #return obj.toJSON() if obj.toJSON
+  copyProperties(obj)
 
 
 
 TasksService = (storage = require('./localStorage')) ->
+
+  addTask = (service, args...) ->
+    task = new Task(args...)
+    task.on TaskEvent.StatusChange, (oldStatus, newStatus) -> service.onTaskStatusChange task, oldStatus, newStatus
+    task.on TaskEvent.CostChange, (oldCost, newCost) -> service.onTaskCostChange task, oldCost, newCost
+    task.on TaskEvent.GroupChange, () -> service.onTaskGroupChange task
+    task
+
+  BOOKED = "booked"
 
   project: {}
   budget: new Budget(0)
   projects: []
   options: {}
   loading: true
+  booking: new Group(1, BOOKED, [])
+
+  onTaskStatusChange: (task, oldStatus, newStatus) ->
+    @booking.onTaskStatusChange task, oldStatus, newStatus
+  onTaskCostChange: (task, oldCost, newCost) ->
+    @booking.onTaskCostChange task, oldCost, newCost
+  onTaskGroupChange: (task) ->
+    @booking.onTaskGroupChange(task)
 
   load: (cb) ->
     clear @project, @projects, @options
@@ -81,9 +193,9 @@ TasksService = (storage = require('./localStorage')) ->
     storage.getProjects (projects, error) =>
       return cb(error) if error
       projects.forEach (p) =>
-        p.tasks = p.tasks.map (t) -> new Task(t.title, t.cost, t.status)
         proj = new Project()
         angular.copy(p, proj)
+        proj.tasks = proj.tasks.map (t) => addTask(@, t.title, t.cost, t.status, t.groups)
         @projects.push proj
       storage.getBudget (budget, error) =>
         return cb(error) if error
@@ -158,7 +270,7 @@ TasksService = (storage = require('./localStorage')) ->
   addTask: (name, cost) ->
     return if not @project.objectId
     {name, cost} = parseString name, cost
-    t = task(name, cost)
+    t = addTask(@, name, cost)
     t.updateStatus(@budget)
     @_addTask t
 
@@ -175,6 +287,12 @@ TasksService = (storage = require('./localStorage')) ->
 
   saveTask: (task) ->
     @_saveCurrentProject()
+
+  toggleBooking: (task) ->
+    if (task.isInGroup(BOOKED)) then task.removeFromGroup(BOOKED) else task.addToGroup(BOOKED)
+
+  isBooked: (task) ->
+    task.isInGroup(BOOKED)
 
   toggle: (task) ->
     if task.is "completed"
@@ -196,6 +314,10 @@ TasksService = (storage = require('./localStorage')) ->
     completed = project.tasks.filter((t) -> t.is "completed").length
     total = project.tasks.length
     if total is 0 then 0 else 100*completed/total
+
+  getBooking: -> @booking
+
+
 
 module.exports = TasksService
 

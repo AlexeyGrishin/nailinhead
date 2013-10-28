@@ -29,7 +29,12 @@ class Group
     task.groups.indexOf(@name) > -1
 
   _recalculate: ->
-    @amount = @tasks.map((t) -> t.cost).reduce ((a,b)->a+b), 0
+    @amount = (@tasks.map((t) -> t.cost).reduce ((a,b)->a+b), 0) ? 0
+
+  #assumed that task is already linked to group and its cost is in amount
+  #TODO: probably it is better to recalculate amount? as we reiterate all tasks anyway
+  linkTask: (task) ->
+    @tasks.push(task)
 
   onTaskGroupChange: (task) ->
     if @_listedIn(task)
@@ -52,6 +57,14 @@ class Group
     else if oldStatus == "completed"
       @amount += toFloat(task.cost)
 
+  serialize: ->
+    {objectId: @id, @name, @amount}
+
+  deserialize: (groupData)->
+    @id = groupData.objectId
+    @name = groupData.name
+    @amount = groupData.amount
+
 class EventEmitter
   constructor: ->
   trigger: (eventName, args...)->
@@ -70,6 +83,7 @@ TaskEvent =
 class Task extends EventEmitter
   constructor: (@title, @cost = 0, @status = "", @groups = []) ->
     super
+    @cost = toFloat(@cost)
 
   complete: (budget) ->
     return if @status is "completed"
@@ -98,6 +112,7 @@ class Task extends EventEmitter
   updateStatus: (budget) ->
     oldStatus = @status
     return false if @status is "completed"
+    #TODO: introduce consts for statuses
     @_change "status", if budget.isEnoughFor(@cost) then "available" else "unavailable"
     @status != oldStatus
 
@@ -178,35 +193,60 @@ TasksService = (storage = require('./localStorage')) ->
   projects: []
   options: {}
   loading: true
-  booking: new Group(1, BOOKED, [])
+  booking: new Group(null, BOOKED)
 
   onTaskStatusChange: (task, oldStatus, newStatus) ->
     @booking.onTaskStatusChange task, oldStatus, newStatus
+    storage.saveGroup @booking.serialize()
+
   onTaskCostChange: (task, oldCost, newCost) ->
     @booking.onTaskCostChange task, oldCost, newCost
+    storage.saveGroup @booking.serialize()
+
   onTaskGroupChange: (task) ->
     @booking.onTaskGroupChange(task)
+    storage.saveGroup @booking.serialize()
 
   load: (cb) ->
     clear @project, @projects, @options
     @loading = true
-    storage.getProjects (projects, error) =>
-      return cb(error) if error
-      projects.forEach (p) =>
-        proj = new Project()
-        angular.copy(p, proj)
-        proj.tasks = proj.tasks.map (t) => addTask(@, t.title, t.cost, t.status, t.groups)
-        @projects.push proj
-      storage.getBudget (budget, error) =>
+    @_loadGroups =>
+      storage.getProjects (projects, error) =>
         return cb(error) if error
-        @setBudget(budget?.amount)
-        storage.getOptions (options, error) =>
-          angular.copy options, @options if options
+        projects.forEach (p) =>
+          proj = new Project()
+          angular.copy(p, proj)
+          proj.tasks = proj.tasks.map (t) => addTask(@, t.title, t.cost, t.status, t.groups)
+          @_linkTasksAndGroups proj.tasks
+          @projects.push proj
+        @booking._recalculate() #TODO: decide - recalculate or store
+        storage.getBudget (budget, error) =>
           return cb(error) if error
-          storage.saveCurrentUser()
-          @loading = false
-          $(@).trigger "tasks.loaded"
-          cb()
+          @setBudget(budget?.amount)
+          storage.getOptions (options, error) =>
+            angular.copy options, @options if options
+            return cb(error) if error
+            storage.saveCurrentUser()
+            @loading = false
+            $(@).trigger "tasks.loaded"
+            cb()
+
+  _loadGroups: (cb) ->
+    storage.getGroup BOOKED, (err, group) =>
+      next = (err, group) =>
+        @booking.deserialize(group)
+        cb()
+      if err == storage.GROUP_NOT_FOUND
+        storage.addGroup {name: BOOKED, amount: 0}, next
+      else
+        next(null, group)
+
+  _linkTasksAndGroups: (tasks) ->
+    groups = [@booking]
+    for task in tasks
+      for group in groups
+        if (task.isInGroup(group.name))
+          group.linkTask(task)
 
   setCurrency: (c, cb = ->) ->
     @options.currency = c
@@ -290,6 +330,8 @@ TasksService = (storage = require('./localStorage')) ->
 
   toggleBooking: (task) ->
     if (task.isInGroup(BOOKED)) then task.removeFromGroup(BOOKED) else task.addToGroup(BOOKED)
+    storage.saveGroup @booking.serialize()
+    @_saveCurrentProject()
 
   isBooked: (task) ->
     task.isInGroup(BOOKED)
@@ -317,6 +359,8 @@ TasksService = (storage = require('./localStorage')) ->
 
   getBooking: -> @booking
 
+  getStatusForCost: (cost) ->
+    if @budget.isEnoughFor(cost) then "available" else "unavailable"
 
 
 module.exports = TasksService

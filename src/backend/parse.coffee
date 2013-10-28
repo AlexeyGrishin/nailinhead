@@ -1,6 +1,11 @@
 Project = Parse.Object.extend "Project"
+Group = Parse.Object.extend "Group"
 
 Me = -> Parse.User.current()
+
+mode = "dev"
+
+canSave = (act) -> act() if mode != "dev"
 
 Backend =
 
@@ -71,13 +76,11 @@ Backend =
     project = new Project(projectData)
     project.set("owner", Parse.User.current());
     project.setACL(new Parse.ACL(Parse.User.current()));
-    project.save null, @defaultHandler (project) -> cb(project.toJSON())
+    canSave -> project.save null, @defaultHandler (project) -> cb(project.toJSON())
 
   saveProject: (projectData, cb) ->
-    if projectData.completed
-      projectData = projectData
     projectObject = new Project(projectData)
-    projectObject.save null, @defaultHandler(cb)
+    canSave -> projectObject.save null, @defaultHandler(cb)
 
   deleteProject: (projectData, cb) ->
     projectObject = new Project(projectData)
@@ -93,17 +96,49 @@ Backend =
 
   setOptions: (options, cb) ->
     Me().set("options", options)
-    Me().save @defaultHandler(cb)
+    canSave -> Me().save @defaultHandler(cb)
 
   saveCurrentUser: (cb) ->
-    Me().save @defaultHandler(cb)
+    canSave -> Me().save @defaultHandler(cb)
 
   getBudget: (cb) ->
-    cb(Me().get("budget"));
+    cb(amount: Me().get("budget_amount"));
 
   setBudget: (budget, cb) ->
-    Me().set("budget", budget)
-    Me().save @defaultHandler(cb)
+    oldBudget = Me().get("budget_amount")
+    diff = parseFloat(budget.amount) - oldBudget
+    return if diff == 0
+    Me().increment("budget_amount", diff)
+    canSave -> Me().save @defaultHandler(cb)
+
+  #TODO: need atomic server operations like completeTask(task), uncompleteTask(task) which will update budget as well
+  # and will not touch changes in other tasks
+  # or tasks shall be separate entities...
+
+  #TODO: implement in local storage as well
+  GROUP_NOT_FOUND: "group_not_found"
+  getGroup: (groupName, cb) ->
+    gq = new Parse.Query("Group")
+    gq.equalTo("name", groupName);
+    gq.equalTo("owner", Parse.User.current());
+    gq.find @defaultHandler (groups) =>
+      return cb(@GROUP_NOT_FOUND) if groups.length == 0
+      singleGroup = groups[0]
+      #here we need to access all tasks related to this group. In our case we have to get all projects
+      #make caller do it
+      cb(null, singleGroup.toJSON())
+
+  saveGroup: (groupData, cb) ->
+    gr = new Group(groupData)
+    canSave -> gr.save null, @defaultHandler(cb)
+
+  addGroup: (groupData, cb) ->
+    gr = new Group(groupData)
+    gr.set("owner", Parse.User.current());
+    gr.setACL(new Parse.ACL(Parse.User.current()));
+    canSave -> gr.save null, @defaultHandler (group) -> cb(null, group.toJSON())
+
+
 
 module.exports = Backend
 window.Backend = Backend

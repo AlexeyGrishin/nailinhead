@@ -75,9 +75,23 @@ body {
   }
   .groups {
     float: right;
+    color: @cyanDark;
+    padding: 4px 10px;
+    > span
+    {
+      border-bottom: 1px dotted @cyanDark;
+    }
+    .currency {
+      color: @cyanDark;
+      text-shadow: none;
+      padding-top: 4px;
+    }
   }
   .budget {
     float: right;
+    .currency {
+      padding-top: 4px;
+    }
     input {
       .transition-duration();
       border: none;
@@ -85,7 +99,7 @@ body {
       font-size: @fontBiggest;
       font-weight: bold;
       background: none;
-      width: 100px;
+      width: 70px;
       text-align: right;
       &.start-counting {
         //color: #e6a80b;

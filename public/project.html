@@ -26,15 +26,13 @@
     <li ng-repeat="task in project.tasks"
         delete-to="delete-task"
         on-delete="deleteTask(task)"
-        ng-class="task.status">
-        <strong ng-click="editTask(task)">
+        class="{{task.status}}"
+        ng-class="{selected: selection.isSelected(task)}"
+            >
+        <strong ng-dblclick="editTask(task)" ng-click="selection.toggleSelection(task)">
             {{task.title}}
         </strong>
-        <section>
-            <button class="btn" ng-click="toggleBookingTask(task)">{{ {true: "Unbook", false: "Book"}[isBooked(task)]}}</button>
-            <button class="btn" ng-disabled="task.is('unavailable')" ng-click="toggleTask(task)">{{actionTitle[task.status]}}</button>
-            <em> <currency/>  {{task.cost}}</em>
-        </section>
+        <task-actions-list task="task"></task-actions-list>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"
                       do-not-clear-form
@@ -61,4 +59,9 @@
     </li>
 
 </ul>
+</div>
+
+<div class="selection-panel" ng-hide="selection.tasks.length == 0">
+    <span>{{selection.tasks.length}} tasks selected</span>
+    <task-selection-list selection="selection"></task-selection-list>
 </div>

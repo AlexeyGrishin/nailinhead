@@ -16,11 +16,11 @@
 <body ng-controller="global">
     <div class="header" ng-controller="header">
         <div class="header-content">
-            <div class="groups">
-                <currency></currency> {{booking.amount}}
-            </div>
             <div class="budget" title="Edit current budget" ng-show="auth.loggedIn">
                 <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
+            </div>
+            <div class="groups">
+                <currency></currency> <span title="Booked tasks total amount" countdown="booking.amount" step="500"></span>
             </div>
             <a href="/">
                 <img src="img/logo.svg"/>

@@ -151,6 +151,11 @@ module.exports = (app) ->
       target = null
       val = 0
       inFocus = false
+      setElVal = (val) ->
+        if el.is("input")
+          el.val(val)
+        else
+          el.text(val + "")
       el.on('focus', -> inFocus = true).on('blur', -> inFocus = false)
       scope.$watch attrs.countdown, (newVal) ->
         clearTimeout(to)
@@ -162,6 +167,7 @@ module.exports = (app) ->
             val = target
           if target == val
             el.removeClass("start-counting")
+            setElVal(target)
             return
           step = scope.$eval(attrs.step) ? 1
           if target > val
@@ -170,7 +176,7 @@ module.exports = (app) ->
           else
             val -= step
             val = target if val < target
-          el.val(val)
+          setElVal(val)
           to = setTimeout doStep, 10
         doStep()
 

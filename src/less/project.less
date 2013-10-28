@@ -31,7 +31,7 @@ ul.tasks-list {
       padding-left: 30px;
 
       &:hover {
-        background-image: url(../img/pencil.png);
+        background-image: url(../img/selection0.svg);
         background-position: 6px center;
         background-repeat: no-repeat;
         cursor: pointer;
@@ -49,31 +49,61 @@ ul.tasks-list {
       top: 0;
       bottom: 0;
       right: 10px;
-      width: 200px;
-      button {
-        width: 90px;
-      }
-      em {
-        height: 30px;
+      width: 180px;
+      text-align: right;
+      > div
+      {
         display: inline-block;
-        width: 106px;
-        line-height: 30px;
-        font-size: @fontBigger;
-        font-style: normal;
-        text-align: right;
+        line-height: 50px;
+        &.status-action
+        {
+          width: 90px;
+          button {
+            width: 100%;
+          }
+          span {
+            font-size: @fontBig;
+            text-align: center;
+            width: 100%;
+            display: inline-block;
+          }
+        }
+        &.group-selector
+        {
+          margin-right: 10px;
+          cursor: pointer;
+          > span
+          {
+            font-size: @fontBig;
+            border-bottom: 1px dotted @cyanDark;
+          }
+          &.on > span
+          {
+            color: @cyanDark;
+            border-bottom-color: @cyanDark;
+            font-weight: bold;
+          }
+          &.off > span
+          {
+            color: @grayLight;
+            border-bottom-color: @grayLight;
+          }
+        }
       }
-      em:after {
-        position: absolute;
-        bottom: 0;
-        right: 0;
-        height: 25px;
-        line-height: 25px;
-        font-variant: "small-caps";
-        font-size: @fontNormal;
-        content: "locked";
-      }
+
+
     }
 
+    &.selected
+    {
+      > strong {
+        background-image: url(../img/selection1.svg);
+        background-position: 6px center;
+        background-repeat: no-repeat;
+
+
+      }
+    }
 
 
     &.completed {
@@ -81,7 +111,7 @@ ul.tasks-list {
       section button {
         .btn-danger();
       }
-      strong, em {
+      strong, em, span {
         text-decoration: line-through;
         font-style: italic;
       }
@@ -95,7 +125,7 @@ ul.tasks-list {
       section button {
         .btn-disabled();
       }
-      strong, em {
+      strong, em, span {
         color: gray;
       }
       em:after {

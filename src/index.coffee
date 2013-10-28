@@ -11,6 +11,8 @@ app.service 'tasksService', (backend) ->
 require './test'
 {getDialog} = (require './ui')(app)
 (require './async')(app)
+(require './tasks/selection')(app)
+(require './tasks/actions')(app)
 (require './auth/auth')(app)
 
 app.controller 'global', ($scope, tasksService, backend, auth, $location) ->
@@ -78,12 +80,7 @@ app.controller 'projects', (tasksService, $scope, $location) ->
 
 
 
-app.controller 'project', (tasksService, $scope, $routeParams) ->
-
-  $scope.actionTitle =
-    available: "Upgrade"
-    completed: "Downgrade"
-    unavailable: "Locked"
+app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
 
   projectId = $routeParams.project
   tasksService.onLoad ->
@@ -111,7 +108,6 @@ app.controller 'project', (tasksService, $scope, $routeParams) ->
   $scope.toggleBookingTask = (task) ->
     tasksService.toggleBooking(task)
 
-
   # editing
   $scope.taskInEdit = null
   $scope.editTask = (task) ->
@@ -132,6 +128,12 @@ app.controller 'project', (tasksService, $scope, $routeParams) ->
     $scope.cancelEdit()
   $scope.isInEdit = (task) ->
     $scope.taskInEdit?.original is task
+
+  # selection
+
+  $scope.selection = tasksSelection.createSelection()
+  $scope.$on "$destroy", ->
+    $scope.selection.deselectAll()
 
 
 

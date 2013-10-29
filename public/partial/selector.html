@@ -2,6 +2,7 @@
     <div class="selection-content">
         <strong title="Click to deselect all" ng-click="selection.deselectAll()">
             {{selection.tasks.length}} task(s) selected
+            <span class="hint" ng-show="selection.tasks.length == 1"><b>Ctrl+Click</b> to select more</span>
             <a >Deselect all</a>
         </strong>
 

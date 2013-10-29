@@ -4,6 +4,7 @@
 @import "projects";
 @import "project";
 @import "selection";
+@import "login";
 
 
 .autoGradient(@color, @prc:10%) {
@@ -36,7 +37,7 @@ body {
   .top-panel {
     padding-top: @topPanelPadding;
     line-height: 30px;
-    height: @topPanelHeight;
+    min-height: @topPanelHeight;
     h3 {
       font-size: @fontBig;
       display: inline;
@@ -48,7 +49,7 @@ body {
 }
 
 .data {
-  background-color: #eee;
+  //background-color: #eee;
 }
 
 //header
@@ -118,6 +119,43 @@ body {
     }
   }
   .autoGradient(@headerBg)
+}
+
+//footer
+.footer {
+  position: fixed;
+  .drop-shadow(0, -2px, 4px, 0.2);
+  height: 30px;
+  line-height: 30px;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  .footer-content {
+    .limited-width();
+    ul.nav {
+      float: left;
+      list-style: none;
+      font-size: @fontBig;
+      text-transform: uppercase;
+      > li {
+        float: left;
+        margin-right: 10px;
+        &.selected {
+          font-weight: bold;
+          border-bottom: 2px solid @cyanDark
+        }
+      }
+      margin-top: 0;
+    }
+    text-align: right;
+    strong.user-name {
+      padding-right: 10px;
+    }
+    button {
+      float: right;
+    }
+  }
+  .autoGradient(@grayPanel);
 }
 
 span.currency {

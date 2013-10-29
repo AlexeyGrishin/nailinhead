@@ -89,6 +89,7 @@ class Task extends EventEmitter
     return if @status is "completed"
     throw new Error("Task '#{@title}' cannot be done") if @status is not "available"
     @_change "status", "completed"
+    @completedDate = new Date()
     budget.decrease @cost
 
   _change: (field, newVal) ->
@@ -157,7 +158,7 @@ class Project
     newObj
 
 isInternal = (prop) ->
-  prop.indexOf('_eventObj_') == 0
+  prop.indexOf('_eventObj_') == 0 or prop.indexOf('$$hashKey') == 0
 
 copyProperties = (obj) ->
   if angular.isArray(obj)
@@ -336,11 +337,17 @@ TasksService = (storage = require('./localStorage')) ->
   isBooked: (task) ->
     task.isInGroup(BOOKED)
 
+  _getProject: (task) ->
+    found = @projects.filter (p) ->p.tasks.indexOf(task) != -1
+    return null if found.length == 0
+    found[0]
+
   toggle: (task) ->
     if task.is "completed"
       task.revert @budget
     else if task.is "available"
       task.complete @budget
+      storage.addToReport @_getProject(task), task, ->
     else
       throw new Error "not.available"
     @_updateAllProjectStatuses(task)
@@ -361,6 +368,9 @@ TasksService = (storage = require('./localStorage')) ->
 
   getStatusForCost: (cost) ->
     if @budget.isEnoughFor(cost) then "available" else "unavailable"
+
+  getReport: (date, cb) ->
+    storage.getReport date, cb
 
 
 module.exports = TasksService

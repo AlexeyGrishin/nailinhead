@@ -1,31 +1,37 @@
 //project list
+@projectThumbWidth: 220px;
+@projectThumbHPad: 5px;
+@taskThumbHPad: 10px;
+@projectLiPad: 10px;
+@projectNameHeight: 30px;
 ul.projects-list {
   list-style: none;
+  padding-left: 0;
+  margin-right: -@projectLiPad;
   @bgColor: #ddd;
   li {
-    padding: 10px;
+    padding: @projectLiPad;
     float: left;
     display: block;
     & > div.project {
       position: relative;
-      width: 200px;
-      height: 250px;
-      padding-top: 10px;
-      padding-left: 5px;
-      padding-right: 5px;
-      .box-sizing(border-box);
+      width: @projectThumbWidth;
+      height: 205px;
+      padding-top: @projectNameHeight;
+      padding-left: @projectThumbHPad;
+      padding-right: @projectThumbHPad;
       font-size: @fontBigger;
       background-color: @bgColor;
       .bordered(#ccc,#ccc,#ccc,#ccc);
-      .transition-duration();
+      //.transition-duration();
 
       > strong {
         position: absolute;
-        bottom: 15px;
+        top: 0;
         left: 0;
         right: 0;
-        height: 30px;
-        line-height: 30px;
+        height: @projectNameHeight;
+        line-height: @projectNameHeight;
         text-align: center;
         display: block;
         overflow: hidden;
@@ -42,7 +48,7 @@ ul.projects-list {
         right: 1px;
         height: 15px;
         > span {
-          .transition-duration();
+          //.transition-duration();
           display: inline-block;
           height: 100%;
           box-sizing: border-box;
@@ -58,20 +64,22 @@ ul.projects-list {
 
       > .task-thumb {
         float: left;
-        width: 165px;
+        width: @projectThumbWidth;
         height: 20px;
         overflow: hidden;
-        padding-left: 10px;
-        padding-right: 10px;
+        padding-left: @taskThumbHPad;
+        padding-right: @taskThumbHPad;
         font-size: @fontNormal;
         border: 1px solid @bgColor;
         text-overflow: ellipsis;
         background-color: #eee;
+        .box-sizing(border-box);
         .transition();
 
         &.booked {
-          border-left: 5px solid @cyanDark;
-          background-color: @cyanPanel;
+          .tag {
+            margin-left: -5px;
+          }
         }
 
         &.selected {
@@ -130,5 +138,5 @@ ul.projects-list {
 
 
 .add-project-dialog.dialog-panel.shown {
-  height: 100px;
+  height: 40px;
 }

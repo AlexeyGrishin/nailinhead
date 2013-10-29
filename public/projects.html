@@ -10,7 +10,7 @@
         </button>
     </div>
 
-    <dialog-panel show-if="addProjectDialog" class="add-project-dialog" on-save="addProject()" on-hide="addProjectDialog=false">
+    <dialog-panel show-if="addProjectDialog" class="add-project-dialog one-line" on-save="addProject()" on-hide="addProjectDialog=false">
         <label>
             New project name:
             <input ng-model="newProject.title" class="input-long"/>

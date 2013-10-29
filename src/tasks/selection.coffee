@@ -13,6 +13,8 @@ module.exports = (app) ->
           @tasks.splice(idx, 1)
       isSelected: (task) ->
         @tasks.indexOf(task) > -1
+      hasOtherSelectedThan: (task) ->
+        @tasks.length > 1 or @tasks[0] != task
       deselectAll: ->
         @tasks.splice(0, @tasks.length)
 
@@ -46,4 +48,16 @@ module.exports = (app) ->
 
     createSelection: ->
       new Selection()
+
+  #<something select-to='selection' select-with='click|ctrl-click' select='object'>
+  #TODO: filter non-tasks
+  app.directive 'selectTo', ->
+    (scope, el, attrs) ->
+      selection = scope.$eval(attrs.selectTo)
+      useCtrl = attrs.selectWith == 'ctrl-click'
+      el.click (e) ->
+        objectToSelect = scope.$eval(attrs.select)
+        selection.deselectAll() if useCtrl and not e.ctrlKey and selection.hasOtherSelectedThan(objectToSelect)
+        selection.toggleSelection(objectToSelect)
+        scope.$apply()
 

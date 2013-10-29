@@ -1,0 +1,24 @@
+<div class="top-panel reports">
+    <h3>Report for {{year}} / {{month+1}}</h3>
+    <div class="buttons">
+        <a class="btn btn-good" href="#/reports/{{prev.year}}/{{prev.month}}"><< Previous</a>
+        <a class="btn btn-good" href="#/reports/">Current month</a>
+        <a class="btn btn-good" href="#/reports/{{next.year}}/{{next.month}}" ng-show="hasNext">Next >></a>
+        <a class="btn btn-disabled" ng-hide="hasNext">Next >></a>
+
+    </div>
+</div>
+<div class="data">
+<div class="loading" ng-show="loading">
+    Loading, please wait...
+</div>
+<div class="empty-case" ng-show="!loading && report.tasks.length == 0">
+    No tasks completed in this month
+</div>
+<ul ng-show="!loading && report.tasks.length > 0">
+    <li ng-repeat="task in report.tasks">
+        {{task.title}} {{task.cost}}
+    </li>
+</ul>
+
+</div>

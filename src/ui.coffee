@@ -120,7 +120,10 @@ module.exports = (app) ->
       cls = "#{attrs.deleteTo}-item"
       $(el).addClass(cls).draggable {
         revert: true
+        opacity: 0.8
       }
+      $(el).on "dragstart", ->
+        $(el).addClass(cls)   #angular may remove class for some reason
       $(el).data "onDrop", ->
         if attrs.onDelete
           scope.$apply ->
@@ -136,7 +139,7 @@ module.exports = (app) ->
           deleteTo.removeClass("drop-here")
         drop: (e, ui) ->
           ui.draggable.data("onDrop")()
-
+          true
       }
 
 

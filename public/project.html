@@ -2,6 +2,9 @@
 
     <h3><a href="#/" class="back">&nbsp; {{ project.name }}</a></h3>
     <div class="buttons">
+        <label>
+            <input type="checkbox" ng-model="showCompleted"> Show completed tasks
+        </label>
         <button class="btn btn-primary add-new-task"
                 dialog-panel-trigger="addTaskDialog"
                 >Add new task</button>
@@ -23,13 +26,13 @@
     </ul>
     </div>
 <ul class="tasks-list">
-    <li ng-repeat="task in project.tasks"
+    <li ng-repeat="task in project.tasks | nonCompleted:!showCompleted"
         delete-to="delete-task"
         on-delete="deleteTask(task)"
         class="{{task.status}}"
         ng-class="{selected: selection.isSelected(task)}"
             >
-        <strong ng-dblclick="editTask(task)" ng-click="selection.toggleSelection(task)">
+        <strong ng-dblclick="editTask(task)" select-to='selection' select='task' select-with='ctrl-click'>
             {{task.title}}
         </strong>
         <task-actions-list task="task"></task-actions-list>

@@ -15,7 +15,7 @@ require './test'
 (require './tasks/actions')(app)
 (require './auth/auth')(app)
 
-app.controller 'global', ($scope, tasksService, backend, auth, $location) ->
+app.controller 'global', ($scope, tasksService, backend, auth, $location, $route) ->
   $scope.loading = true
   tasksService.onLoad ->
     $scope.loading = false
@@ -31,6 +31,8 @@ app.controller 'global', ($scope, tasksService, backend, auth, $location) ->
   $scope.logout = ->
     auth.logout(->)
   auth.check()
+  $scope.$on '$routeChangeSuccess', (ev, route) ->
+    $scope.section = route.section
 
 app.controller 'header', ($scope, tasksService) ->
   $scope.budget = tasksService.budget
@@ -43,9 +45,12 @@ app.controller 'header', ($scope, tasksService) ->
     tasksService.setBudget newVal
 
 app.config ($routeProvider) ->
-  $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html'
+  $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'
+  $routeProvider.when '/reports/:year/:month', controller: 'reports', templateUrl: './reports.html', section:'reports'
+  $routeProvider.when '/reports/:year', controller: 'reports', templateUrl: './reports.html', section:'reports'
+  $routeProvider.when '/reports', controller: 'reports', templateUrl: './reports.html', section:'reports'
   $routeProvider.when '/auth', controller: 'login', templateUrl: './login.html'
-  $routeProvider.when '/:project', controller: 'project', templateUrl: './project.html'
+  $routeProvider.when '/:project', controller: 'project', templateUrl: './project.html', section:'projects'
 
 app.controller 'login', ($scope, auth, $location) ->
   $scope.auth = auth
@@ -139,7 +144,45 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
 
+app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
+  year = parseFloat($routeParams.year)
+  month = parseFloat($routeParams.month)
+  month = 0 if not isNaN(year) and isNaN(month)
+  today = new Date()
+  if isNaN(year) and isNaN(month)
+    date = today
+    year = date.getFullYear()
+    month = date.getMonth()
+  else if year > today.getFullYear() || month > today.getMonth()
+    $location.path "/reports"
+  else
+    date = new Date()
+    date.setFullYear(year)
+    date.setMonth(month)
 
+  $scope.loading = true
+  $scope.month = month
+  $scope.year = year
+  $scope.prev = {
+    month: if month == 0 then 11 else month - 1
+    year: if month == 0 then year - 1 else year
+  }
+  $scope.next = {
+    month: if month == 11 then 0 else month + 1
+    year: if month == 11 then year + 1 else year
+  }
+  $scope.hasNext = true
+  tasksService.getReport date, (err, report) ->
+    $scope.loading = false
+    $scope.hasNext = (year < today.getFullYear() || month < today.getMonth())
+    $scope.report = report
+    $scope.$apply()
+  #tbd
+
+app.filter 'nonCompleted', ->
+  (input, doFilter) ->
+    return input if not doFilter
+    input.filter (t) -> not t.is('completed')
 
 app.service 'projectThumbModel', ->
   create: (project, maxAmountOfTasks) ->
@@ -188,8 +231,8 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
     scope.click = (task) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
-      else
-        scope.selection.toggleSelection(task)
+      #else
+      #  scope.selection.toggleSelection(task)
     scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
     scope.isSelected = (task) -> scope.selection.isSelected(task)
     scope.$watch("project", (-> scope.thumb.update()), true)

@@ -150,6 +150,7 @@ class Project
   completed: -> @byStatus("completed")
   available: -> @byStatus("available")
   unavailable: -> @byStatus("unavailable")
+  nonCompleted: -> @tasks.filter (t) ->!t.is("completed")
   toJSON: ->
     newObj = angular.copy(@)
     for own key, val of newObj

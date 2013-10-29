@@ -17,7 +17,7 @@
 </div>
 <ul ng-show="!loading && report.tasks.length > 0">
     <li ng-repeat="task in report.tasks">
-        {{task.title}} {{task.cost}}
+        {{task.title}} - <b>{{options.currency}} {{task.cost}}</b>
     </li>
 </ul>
 

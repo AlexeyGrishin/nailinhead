@@ -9,11 +9,8 @@
         <span class='tag tag-cyan' ng-show='isBooked(task)'>booked</span>
         {{task.title}}
     </div>
-    <!--div class="progress">
-        <span ng-repeat="progress in thumb.progressToShow"
-              class="{{progress.name}}"
-              ui-title="{{progress.amount}} {{progress.title}}"
-              style="width: {{progress.percent + '%'}}"></span>
-    </div-->
+    <div class="hint" ng-show="thumb.tasksToShow.length == 0">
+        <span>No ongoing tasks. You may delete this project or </span><a href="#/{{project.objectId}}">add new task</a>
+    </div>
     <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
 </div>

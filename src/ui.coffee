@@ -187,5 +187,23 @@ module.exports = (app) ->
     (scope, el, attrs) ->
       el.tooltip placement: "right", title: -> attrs.uiTitle
 
-  {getDialog}
+  addZeros = (num, amount) ->
+    str = num + ''
+    str = '0' + str while str.length < amount
+    str
+  app.filter 'cost', ->
+    (input) ->
+      parts = []
+      div = parseFloat(input)
+      div = 0 if isNaN(div)
+      return 0 if div == 0
+      while div > 0
+        rem = div % 1000
+        div = div / 1000 |0
+        parts.unshift if div > 0 then addZeros(rem, 3) else rem
+      parts.join(' ')
+
+
+  return {getDialog}
+
 

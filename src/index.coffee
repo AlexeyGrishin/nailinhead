@@ -62,11 +62,13 @@ app.controller 'login', ($scope, auth, $location) ->
       $scope.error = error
     $scope.$apply()
   $scope.register = ->
+    $scope.error = null
     auth.register $scope.auth.username, $scope.auth.password, {
       options: {currency: "RUR"}
       budget: {amount: 10000}
     }, onLogReg
   $scope.login = ->
+    $scope.error = null
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
 app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
@@ -95,7 +97,7 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
     tasksService.selectProject(projectId)
     tasksService.updateStatus()
     $scope.project = tasksService.project
-    if ($scope.project.tasks.length == 0)
+    if ($scope.project.nonCompleted().length == 0)
       $scope.addTaskDialog = true
     $scope.$apply() if not $scope.$$phase
 
@@ -181,7 +183,7 @@ app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->
-    return input if not doFilter
+    return input if not doFilter or input is undefined
     input.filter (t) -> not t.is('completed')
 
 app.service 'projectThumbModel', ->

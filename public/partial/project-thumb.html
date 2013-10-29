@@ -1,0 +1,17 @@
+<div class="project">
+    <div class="task-thumb {{task.status}}"
+         ng-class="{booked: isBooked(task), selected: isSelected(task)}"
+         ng-repeat="task in thumb.tasksToShow"
+         ui-title="{{options.currency}} {{task.cost}}"
+         ng-click="click(task)"
+            >
+        {{task.title}}
+    </div>
+    <div class="progress">
+        <span ng-repeat="progress in thumb.progressToShow"
+              class="{{progress.name}}"
+              ui-title="{{progress.amount}} {{progress.title}}"
+              style="width: {{progress.percent + '%'}}"></span>
+    </div>
+    <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
+</div>

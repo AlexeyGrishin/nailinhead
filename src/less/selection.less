@@ -1,0 +1,60 @@
+
+@selectionPanelHeight: 50px;
+.selection-panel
+{
+  position: fixed;
+  top: @topHeaderHeight + @topHeaderPadding*2 + @topPanelPadding - (@selectionPanelHeight - @topPanelHeight) + 10px;
+  height: @selectionPanelHeight;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  .transition();
+
+  &.hidden-panel
+  {
+    top: @topHeaderHeight - @selectionPanelHeight;
+  }
+
+  > .selection-content
+  {
+    .drop-shadow(0, 2px, 4px, 0.9);
+    .autoGradient(@headerBg);
+    .limited-width();
+    position: relative;
+    height: @selectionPanelHeight;
+
+    > strong
+    {
+      font-size: @fontBigger;
+      line-height: 50px;
+      padding-left: 30px;
+      background-image: url(../img/selection.svg);
+      background-position: 6px center;
+      background-repeat: no-repeat;
+      cursor: pointer;
+      position: absolute;
+      left: 0;
+      right: 190px;
+
+      &:hover {
+        background-image: url(../img/selectionAll0.svg);
+      }
+
+      > a
+      {
+        font-size: @fontBig;
+        font-weight: normal;
+        border-bottom: 1px dotted gray;
+        color: gray;
+        &:hover {
+          color: black;
+          border-bottom-color: black;
+          text-decoration: none;
+        }
+        float: right;
+        margin-right: 20px;
+      }
+
+    }
+  }
+}

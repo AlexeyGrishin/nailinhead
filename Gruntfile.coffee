@@ -54,9 +54,9 @@ module.exports = (grunt) ->
       styles:
         files: ["src/less/**/*.less"] 
         tasks: ["less"]
-      tests:
-        files: ["src/**/*.coffee", "public/**/*.html", "tests/**/*.coffee"]
-        tasks: ["unit-tests"]
+      #tests:
+      #  files: ["src/**/*.coffee", "public/**/*.html", "tests/**/*.coffee"]
+      #  tasks: ["unit-tests"]
   }
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-browserify'

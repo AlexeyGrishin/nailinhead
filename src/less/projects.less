@@ -1,7 +1,7 @@
 //project list
 ul.projects-list {
   list-style: none;
-  @bgColor: #ccc;
+  @bgColor: #ddd;
   li {
     padding: 10px;
     float: left;
@@ -10,7 +10,9 @@ ul.projects-list {
       position: relative;
       width: 200px;
       height: 250px;
-      padding: 10px;
+      padding-top: 10px;
+      padding-left: 5px;
+      padding-right: 5px;
       .box-sizing(border-box);
       font-size: @fontBigger;
       background-color: @bgColor;
@@ -56,21 +58,38 @@ ul.projects-list {
 
       > .task-thumb {
         float: left;
-        width: 175px;
+        width: 165px;
         height: 20px;
         overflow: hidden;
+        padding-left: 10px;
+        padding-right: 10px;
         font-size: @fontNormal;
-        //margin: 7px;
         border: 1px solid @bgColor;
         text-overflow: ellipsis;
-        .transition-duration();
+        background-color: #eee;
+        .transition();
 
-        &.available, &.completed, &.more {
-          cursor: pointer;
-          &:hover {
-            border-color: @goldDark;
-          }
+        &.booked {
+          border-left: 5px solid @cyanDark;
+          background-color: @cyanPanel;
         }
+
+        &.selected {
+
+          background-image: url(../img/selection1.svg);
+          background-repeat: no-repeat;
+          background-size: 5px 5px;
+          background-position: 0px center;
+          background-color: @goldPanel;
+        }
+
+
+
+        cursor: pointer;
+        &:hover {
+          border-color: @goldDark;
+        }
+
 
 
         &.more {
@@ -84,19 +103,21 @@ ul.projects-list {
       }
 
       .completed {
-        background-color: @greenPanel;
+        .task-completed();
+        /*background-color: @greenPanel;
         &:hover {
           background-color: @greenLight;
-        }
+        }*/
       }
       .available {
-        background-color: @goldPanel;
+        /*background-color: @goldPanel;
         &:hover {
           background-color: @goldLight;
-        }
+        }*/
       }
       .unavailable {
-        background-color: @grayPanel;
+       /* background-color: @grayPanel;*/
+        .task-unavailable();
       }
 
       &:hover {

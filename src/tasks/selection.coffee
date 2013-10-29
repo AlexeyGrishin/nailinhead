@@ -17,17 +17,23 @@ module.exports = (app) ->
         @tasks.splice(0, @tasks.length)
 
       toggleBookingTask: ->
-        #for each - toggle booking
-      toggle: ->
-        #for each - toggle,
+        selectionBooked = @isBooked()
+        tasksToToggle = @tasks.filter (t) -> tasksService.isBooked(t) == selectionBooked
+        tasksToToggle.forEach (task) ->
+          tasksService.toggleBooking(task)
 
+      toggle: ->
+        nonCompleted = @tasks.filter (t) -> not t.is("completed")
+        tasksToToggle = if nonCompleted.length == 0 then @tasks else nonCompleted
+        tasksToToggle.forEach (task) ->
+          #TODO: batch
+          tasksService.toggle(task)
       isBooked: ->
         @tasks.every (t) ->tasksService.isBooked(t)
       getSelectionAsTask: ->
-        completed = @tasks.filter (t) ->t.is("completed")
         nonCompleted = @tasks.filter (t) -> not t.is("completed")
         task = {}
-        if (completed.length == @tasks.length)
+        if (nonCompleted.length == 0)
           #all completed
           task.cost = @tasks.map((t) ->t.cost).reduce ((a,b)->a+b), 0
           task.status = "completed"

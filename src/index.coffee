@@ -64,7 +64,7 @@ app.controller 'login', ($scope, auth, $location) ->
   $scope.login = ->
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
-app.controller 'projects', (tasksService, $scope, $location) ->
+app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
   $scope.projects = tasksService.projects
 
   $scope.newProject = {title:""}
@@ -78,7 +78,10 @@ app.controller 'projects', (tasksService, $scope, $location) ->
     tasksService.deleteProject project, ->
       $scope.$apply()
 
-
+  # selection
+  $scope.selection = tasksSelection.createSelection()
+  $scope.$on "$destroy", ->
+    $scope.selection.deselectAll()
 
 app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
 
@@ -114,6 +117,7 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
     wasEdited = $scope.isInEdit(task)
     $scope.cancelEdit()
     return if wasEdited
+    $scope.selection.deselectAll()
     $scope.taskInEdit = {
       original: task,
       edited: $.extend {}, task
@@ -162,7 +166,8 @@ app.service 'projectThumbModel', ->
         rest = total - maxAmountOfTasks + 1
         tasksToShow.push {title: "Show the rest #{rest} tasks", status: "more", text: "..."}
       tasksToShow
-    toggle: (task) ->
+    update: ->
+      #@tasksToShow.splice.apply(@tasksToShow, [0, @tasksToShow.length].concat(calclateTasksToShow(project)))
       for prog, index in calculateProgress(project)
         @progressToShow[index] = prog
       #TODO: switch when all tasks completed
@@ -175,35 +180,19 @@ app.service 'projectThumbModel', ->
 app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
+    selection: "=selection"
   replace: true
-  template:
-    """
-    <div class="project">
-      <div class="task-thumb {{task.status}}"
-           ng-repeat="task in thumb.tasksToShow"
-           ui-title="{{options.currency}} {{task.cost}}"
-           ng-click="click(task)"
-            >
-            {{task.title}}
-      </div>
-      <div class="progress">
-        <span ng-repeat="progress in thumb.progressToShow"
-              class="{{progress.name}}"
-              ui-title="{{progress.amount}} {{progress.title}}"
-              style="width: {{progress.percent + '%'}}"></span>
-      </div>
-      <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
-    </div>
-    """
+  templateUrl: "partial/project-thumb.html"
   link: (scope, el, attrs) ->
     scope.thumb = projectThumbModel.create(scope.project, attrs.thumbs ? 9, scope.thumb)
     scope.click = (task) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
-      else if task.status != "unavailable"
-        tasksService.toggle(task)
-        scope.thumb.toggle(task)
-
+      else
+        scope.selection.toggleSelection(task)
+    scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
+    scope.isSelected = (task) -> scope.selection.isSelected(task)
+    scope.$watch("project", (-> scope.thumb.update()), true)
 
 app.directive 'ngEnter', ->
   (scope, el, attrs) ->

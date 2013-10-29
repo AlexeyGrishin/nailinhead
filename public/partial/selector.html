@@ -1,0 +1,10 @@
+<div class="selection-panel" ng-class="{'hidden-panel': selection.tasks.length == 0}" ng-cloak>
+    <div class="selection-content">
+        <strong title="Click to deselect all" ng-click="selection.deselectAll()">
+            {{selection.tasks.length}} task(s) selected
+            <a >Deselect all</a>
+        </strong>
+
+        <task-selection-list selection="selection"></task-selection-list>
+    </div>
+</div>

@@ -11,7 +11,7 @@
     </div>
 
 </div>
-
+<div ng-include="'partial/selector.html'"></div>
 
 <div class="data">
     <div class="loading" ng-show="loading">
@@ -61,7 +61,3 @@
 </ul>
 </div>
 
-<div class="selection-panel" ng-hide="selection.tasks.length == 0">
-    <span>{{selection.tasks.length}} tasks selected</span>
-    <task-selection-list selection="selection"></task-selection-list>
-</div>

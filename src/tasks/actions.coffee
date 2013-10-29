@@ -12,6 +12,7 @@ module.exports = (app) ->
         scope.selection.toggleBookingTask()
       scope.toggleTask = ->
         scope.selection.toggle()
+        scope.selection.deselectAll() if (attrs.autoClose isnt undefined)
       scope.$watch("selection", ->
         scope.taskBooked = scope.selection.isBooked()
         scope.task = scope.selection.getSelectionAsTask()

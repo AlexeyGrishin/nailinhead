@@ -18,7 +18,7 @@ ul.tasks-list {
   padding-left: 0;
 
   li {
-    .transition-duration();
+    .transition();
     min-height: 50px;
     width: 100%;
     position: relative;
@@ -43,56 +43,6 @@ ul.tasks-list {
       margin-left: 20px;
     }
 
-    > section {
-      position: absolute;
-      display: block;
-      top: 0;
-      bottom: 0;
-      right: 10px;
-      width: 180px;
-      text-align: right;
-      > div
-      {
-        display: inline-block;
-        line-height: 50px;
-        &.status-action
-        {
-          width: 90px;
-          button {
-            width: 100%;
-          }
-          span {
-            font-size: @fontBig;
-            text-align: center;
-            width: 100%;
-            display: inline-block;
-          }
-        }
-        &.group-selector
-        {
-          margin-right: 10px;
-          cursor: pointer;
-          > span
-          {
-            font-size: @fontBig;
-            border-bottom: 1px dotted @cyanDark;
-          }
-          &.on > span
-          {
-            color: @cyanDark;
-            border-bottom-color: @cyanDark;
-            font-weight: bold;
-          }
-          &.off > span
-          {
-            color: @grayLight;
-            border-bottom-color: @grayLight;
-          }
-        }
-      }
-
-
-    }
 
     &.selected
     {
@@ -100,55 +50,94 @@ ul.tasks-list {
         background-image: url(../img/selection1.svg);
         background-position: 6px center;
         background-repeat: no-repeat;
-
-
       }
+      background-color: @goldPanel;
     }
 
-
     &.completed {
-      background-color: @greenPanel;
-      section button {
-        .btn-danger();
-      }
-      strong, em, span {
-        text-decoration: line-through;
-        font-style: italic;
-      }
-      em:after {
-        content: "done";
-        color: #228b22;
+      strong {
+        .task-completed();
       }
     }
 
     &.unavailable {
-      section button {
-        .btn-disabled();
-      }
-      strong, em, span {
-        color: gray;
-      }
-      em:after {
-        content: "locked";
-        color: gray;
+      strong {
+        .task-unavailable();
       }
     }
 
     &.available {
-      background-color: @goldPanel;
-      section button {
-        .btn-primary();
-      }
-
-      em {
-        color: @goldDark;
-      }
-      em:after {
-        content: "unlocked";
-        color: @goldDark;
-      }
     }
 
   }
 }
+
+// task actions
+section.task-actions {
+  position: absolute;
+  display: block;
+  top: 0;
+  bottom: 0;
+  right: 10px;
+  width: 180px;
+  text-align: right;
+  > div
+  {
+    display: inline-block;
+    line-height: 50px;
+    &.status-action
+    {
+      width: 90px;
+      button {
+        width: 100%;
+      }
+      > span {
+        font-size: @fontBig;
+        text-align: center;
+        width: 100%;
+        display: inline-block;
+      }
+    }
+    &.group-selector
+    {
+      margin-right: 10px;
+      cursor: pointer;
+      > span
+      {
+        font-size: @fontBig;
+        border-bottom: 1px dotted @cyanDark;
+      }
+      &.on > span
+      {
+        color: @cyanDark;
+        border-bottom-color: @cyanDark;
+        font-weight: bold;
+      }
+      &.off > span
+      {
+        color: @grayLight;
+        border-bottom-color: @grayLight;
+      }
+    }
+  }
+
+  &.completed
+  {
+    .status-action > span > span
+    {
+      .task-completed();
+    }
+  }
+
+  &.unavailable
+  {
+    .status-action > span
+    {
+      .task-unavailable();
+    }
+
+  }
+
+}
+
 

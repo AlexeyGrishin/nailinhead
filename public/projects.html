@@ -18,6 +18,8 @@
     </dialog-panel>
 </div>
 
+<div ng-include="'partial/selector.html'"></div>
+
 <div class="data">
     <div class="loading" ng-show="loading">
         Loading, please wait...
@@ -29,7 +31,7 @@
     </div>
     <ul class="projects-list clearfix">
         <li ng-repeat="project in projects"  delete-to="delete-project" on-delete="deleteProject(project)">
-            <div project-thumb="project"></div>
+            <div project-thumb="project" selection="selection"></div>
         </li>
     </ul>
 </div>

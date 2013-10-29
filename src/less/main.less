@@ -3,6 +3,7 @@
 @import "controls";
 @import "projects";
 @import "project";
+@import "selection";
 
 
 .autoGradient(@color, @prc:10%) {
@@ -30,11 +31,12 @@ body {
 
 .main-content {
   padding-top: @topHeaderHeight + 2*@topHeaderPadding + 5;
+  position: relative;
   .limited-width();
   .top-panel {
-    padding-top: 20px;
+    padding-top: @topPanelPadding;
     line-height: 30px;
-    min-height: 30px;
+    height: @topPanelHeight;
     h3 {
       font-size: @fontBig;
       display: inline;
@@ -77,6 +79,7 @@ body {
     float: right;
     color: @cyanDark;
     padding: 4px 10px;
+    margin-right: 10px;
     > span
     {
       border-bottom: 1px dotted @cyanDark;
@@ -89,17 +92,19 @@ body {
   }
   .budget {
     float: right;
+    margin-right: 10px;
+    width: 90px;
     .currency {
       padding-top: 4px;
     }
     input {
-      .transition-duration();
+      .transition();
       border: none;
       color: #b8860b;
       font-size: @fontBiggest;
       font-weight: bold;
       background: none;
-      width: 70px;
+      width: 55px;
       text-align: right;
       &.start-counting {
         //color: #e6a80b;

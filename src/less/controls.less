@@ -2,8 +2,8 @@
 @import "elements";
 
 .bg-with-hover(@bg) {
-  background-color: @bg;
-  .transition-duration();
+  .autoGradient(@bg, 5%);
+  .transition();
   &:hover {
     .box-shadow(0 0 4px darken(@bg, 50%));
   }
@@ -81,7 +81,7 @@ button.link {
 /// forms
 .dialog-panel {
   width: 100%;
-  .transition-duration();
+  .transition();
   opacity: 0;
   height: 0;
   form {
@@ -128,7 +128,7 @@ form {
 }
 
 input{
-  .transition-duration();
+  .transition();
   border: white 1px solid;
   font-size: @fontBig;
   padding: 4px 10px;
@@ -150,4 +150,17 @@ input{
 .btn.dialog-trigger-pressed {
   background-color: @defPanelBg;
   color: white;
+}
+
+// task states
+
+.task-completed()
+{
+  text-decoration: line-through;
+  font-style: italic;
+}
+
+.task-unavailable
+{
+  color: gray;
 }

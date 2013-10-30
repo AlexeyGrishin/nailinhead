@@ -2,41 +2,47 @@
 
     <h3><a href="#/" class="back">&nbsp; {{ project.name }}</a></h3>
     <div class="buttons">
+        <label>
+            <input type="checkbox" ng-model="showCompleted"> <span gr-key> Show completed tasks</span>
+        </label>
         <button class="btn btn-primary add-new-task"
                 dialog-panel-trigger="addTaskDialog"
+                gr-key
                 >Add new task</button>
-        <button class="btn btn-danger btn-drop-area delete-task">
+        <button class="btn btn-danger btn-drop-area delete-task" gr-key>
             Drop to delete
         </button>
     </div>
 
 </div>
-
+<div ng-include="'partial/selector.html'"></div>
 
 <div class="data">
-    <div class="loading" ng-show="loading">
+    <div class="loading" ng-show="loading" gr-key>
         Loading, please wait...
     </div>
     <div class="empty-case" ng-show="project.tasks.length == 0 && !loading">
     <ul>
-        <li>Add your task!</li>
+        <li gr-key>Add your task!</li>
     </ul>
     </div>
 <ul class="tasks-list">
-    <li ng-repeat="task in project.tasks"
+    <li ng-repeat="task in project.tasks | nonCompleted:!showCompleted"
         delete-to="delete-task"
         on-delete="deleteTask(task)"
-        ng-class="task.status">
-        <strong ng-click="editTask(task)">
+        class="{{task.status}}"
+        ng-class="{selected: selection.isSelected(task)}"
+            >
+        <strong ng-dblclick="editTask(task)" select-to='selection' select='task' select-with='ctrl-click'>
             {{task.title}}
         </strong>
-        <section>
-            <button class="btn" ng-disabled="task.is('unavailable')" ng-click="toggleTask(task)">{{actionTitle[task.status]}}</button>
-            <em> <currency/>  {{task.cost}}</em>
-        </section>
+        <task-actions-list task="task"></task-actions-list>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"
                       do-not-clear-form
+                      save-button-title="Save"
+                      cancel-button-title="Close"
+                      gr-attrs="save-button-title,cancel-button-title"
                       on-save="saveTask(task)" on-close="cancelEdit()" >
             <label>
                 <input ng-model="taskInEdit.edited.title" class="input-long"/>
@@ -48,16 +54,21 @@
 
     </li>
     <li ng-show="addTaskDialog">
-        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line" on-save="addTask()" on-hide="addTaskDialog=false" >
+        <dialog-panel show-if="addTaskDialog" class="add-task-dialog one-line"
+                      save-button-title="Save"
+                      cancel-button-title="Close"
+                      gr-attrs="save-button-title,cancel-button-title"
+                      on-save="addTask()" on-hide="addTaskDialog=false" >
             <label>
                 <input ng-model="newTask.title" class="input-long"/>
             </label>
             <label>
                 <currency/> <input ng-model="newTask.cost" class="input-short"/>
             </label>
-            <span class="hint">You may enter cost at the end after ',' or ' ', like this: <b>Buy a refrigerator, $200</b></span>
+            <span class="hint"><span gr-key>You may enter cost at the end after ',' or ' ', like this: </span><b gr-key>Buy a refrigerator, $200</b></span>
         </dialog-panel>
     </li>
 
 </ul>
 </div>
+

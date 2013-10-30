@@ -1,0 +1,16 @@
+<div class="project">
+    <div class="task-thumb {{task.status}}"
+         ng-class="{booked: isBooked(task), selected: isSelected(task)}"
+         ng-repeat="task in thumb.tasksToShow"
+         ui-title="{{options.currency}} {{task.cost}}"
+         select-to='selection' select='task' select-with='ctrl-click'
+         ng-click="click(task)"
+            >
+        <span class='tag tag-cyan' ng-show='isBooked(task)'>booked</span>
+        {{task.title}}
+    </div>
+    <div class="hint" ng-show="thumb.tasksToShow.length == 0">
+        <span gr-key>No ongoing tasks. You may delete this project or </span><a href="#/{{project.objectId}}" gr-key>add new task</a>
+    </div>
+    <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
+</div>

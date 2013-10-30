@@ -1,35 +1,43 @@
 
 <div class="top-panel">
-    <h3>Projects list</h3>
+    <h3 gr-key>Projects list</h3>
     <div class="buttons">
         <button class="btn btn-primary add-new-project"
                 dialog-panel-trigger="addProjectDialog"
+                gr-key
                 >Add new project</button>
-        <button class="btn btn-danger btn-drop-area delete-project">
+        <button class="btn btn-danger btn-drop-area delete-project" gr-key>
             Drop to delete
         </button>
     </div>
 
-    <dialog-panel show-if="addProjectDialog" class="add-project-dialog" on-save="addProject()" on-hide="addProjectDialog=false">
+    <dialog-panel show-if="addProjectDialog"
+                  class="add-project-dialog one-line"
+                  save-button-title="Save"
+                  cancel-button-title="Close"
+                  gr-attrs="save-button-title,cancel-button-title"
+                  on-save="addProject()" on-hide="addProjectDialog=false">
         <label>
-            New project name:
+            <span gr-key>New project name:</span>
             <input ng-model="newProject.title" class="input-long"/>
         </label>
     </dialog-panel>
 </div>
 
+<div ng-include="'partial/selector.html'"></div>
+
 <div class="data">
-    <div class="loading" ng-show="loading">
+    <div class="loading" ng-show="loading" gr-key>
         Loading, please wait...
     </div>
     <div class="empty-case" ng-show="projects.length == 0 && !loading">
         <ul>
-            <li>Create your first project first!</li>
+            <li gr-key>Create your first project first!</li>
         </ul>
     </div>
     <ul class="projects-list clearfix">
         <li ng-repeat="project in projects"  delete-to="delete-project" on-delete="deleteProject(project)">
-            <div project-thumb="project"></div>
+            <div project-thumb="project" selection="selection"></div>
         </li>
     </ul>
 </div>

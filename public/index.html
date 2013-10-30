@@ -7,21 +7,22 @@
     <script src="js/bootstrap.min.js"></script>
     <script src="js/angular.js"></script>
     <script src="js/parse-1.2.12.js"></script>
+    <script src="js/granula.js"></script>
     <script src="js/index.js"></script>
-    <link rel="stylesheet" href="css/humanity/jquery-ui-1.10.3.custom.min.css"/>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <link rel="stylesheet" href="css/main.css"/>
     <link rel="icon" type="image/png" href="/favicon.ico" />
     <title>nailinhead</title>
+    <script src="lang/ru.json" type="granula/language" gr-lang="ru"></script>
 </head>
-<body ng-controller="global">
+<body ng-controller="global" gr-lang="ru">
     <div class="header" ng-controller="header">
         <div class="header-content">
-            <div class="budget" title="Edit current budget" ng-show="auth.loggedIn">
+            <div class="budget" title="Edit current budget" ng-show="auth.loggedIn" gr-attrs="title">
                 <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
             </div>
             <div class="groups" ng-hide="booking.amount == 0">
-                Booked <currency></currency> <span title="Booked tasks total amount" countdown="booking.amount" step="500"></span>
+                <span gr-key>Booked</span> <currency></currency> <span title="Booked tasks total amount" countdown="booking.amount" step="500"></span>
             </div>
             <a href="#/">
                 <img src="img/logo.svg"/>
@@ -38,11 +39,11 @@
     <div ng-show="auth.loggedIn" class="footer">
         <div class="footer-content">
             <ul class="nav">
-                <li ng-class="{selected: section=='projects'}"><a href="#/"> Projects</a></li>
-                <li ng-class="{selected: section=='reports'}"><a href="#/reports">Reports</a></li>
+                <li ng-class="{selected: section=='projects'}"><a href="#/" gr-key> Projects</a></li>
+                <li ng-class="{selected: section=='reports'}"><a href="#/reports" gr-key>Reports</a></li>
             </ul>
-            <strong class="user-name">You are logged in as {{auth.currentUser.username}}</strong>
-            <a class="logout link-danger" ng-click="logout()">Logout</a>
+            <strong class="user-name" gr-key>You are logged in as {{auth.currentUser.username}}</strong>
+            <a class="logout link-danger" ng-click="logout()" gr-key>Logout</a>
 
         </div>
     </div>

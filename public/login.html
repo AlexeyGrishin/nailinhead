@@ -2,20 +2,21 @@
     {{ error }}
     <div class="intro clearfix">
         <div class="information">
-            <h4>Welcome to <b>nailinhead</b> application!</h4>
-            <p>Here will be description. Soon. Really.</p>
+            <h4 gr-key>Welcome to nailinhead application!</h4>
+            <p gr-key>Here will be description. Soon. Really.</p>
         </div>
         <div class="login-form">
             <form class="login">
                 <label>
-                    Username: <input ng-model="auth.username"/>
+                    <span gr-key>Username:</span> <input ng-model="auth.username"/>
                 </label>
                 <label>
-                    Password: <input ng-model="auth.password" type="password"/>
+                    <span gr-key>Password:</span> <input ng-model="auth.password" type="password"/>
                 </label>
                 <section class="buttons">
-                <button class="btn btn-primary" ng-click="login()">Login</button> -or-
-                <button class="btn btn-good" ng-click="register()">Register</button>
+                    <button class="btn btn-primary" ng-click="login()" gr-key>Login</button>
+                    <span gr-key>-or-</span>
+                    <button class="btn btn-good" ng-click="register()" gr-key>Register</button>
                 </section>
             </form>
         </div>

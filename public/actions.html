@@ -1,7 +1,7 @@
 <section class="task-actions {{task.status}}">
     <div class="group-selector" ng-class="{on: taskBooked, off: !taskBooked}" ng-click="toggleBooked()" ng-hide="task.status == 'completed'">
-        <span ng-show="taskBooked" >booked</span>
-        <span ng-show="!taskBooked">not booked</span>
+        <span ng-show="taskBooked"  gr-key>booked</span>
+        <span ng-show="!taskBooked" gr-key>not booked</span>
     </div>
     <div ng-switch="task.status" class="status-action">
         <button class="btn btn-primary" ng-switch-when="available" ng-click="toggleTask()" title="Click to buy this item">  {{task.cost | cost}}</button>

@@ -1,7 +1,6 @@
 createTasksService = require './tasks/tasks'
 
-app = angular.module('puzzle', [])
-localStorage = require './tasks/localStorage'
+app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
 app.service 'tasksService', (backend) ->
   tasksService = createTasksService backend
@@ -90,14 +89,20 @@ app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
 
+SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
 app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
+
+  $scope.showCompleted = localStorage?[SHOW_COMPLETED_KEY] == 'true'
+  $scope.$watch 'showCompleted', ->
+    localStorage?[SHOW_COMPLETED_KEY] = $scope.showCompleted
 
   projectId = $routeParams.project
   tasksService.onLoad ->
     tasksService.selectProject(projectId)
     tasksService.updateStatus()
     $scope.project = tasksService.project
-    if ($scope.project.nonCompleted().length == 0)
+    visibleTasks = if $scope.showCompleted then $scope.project.tasks else $scope.project.nonCompleted()
+    if (visibleTasks.length == 0)
       $scope.addTaskDialog = true
     $scope.$apply() if not $scope.$$phase
 

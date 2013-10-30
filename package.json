@@ -16,6 +16,7 @@
     "karma-jasmine": "*",
     "karma-chrome-launcher": "*",
     "karma-html-reporter": "*",
-    "karma-coffee-preprocessor": "*"
+    "karma-coffee-preprocessor": "*",
+    "granula": "~1.0.1"
   }
 }

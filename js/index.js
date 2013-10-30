@@ -128,12 +128,24 @@
 
 },{}],3:[function(require,module,exports){
 (function() {
-  var Backend, Me, Project;
+  var Backend, Group, Me, Project, Report, canSave, mode;
 
   Project = Parse.Object.extend("Project");
 
+  Group = Parse.Object.extend("Group");
+
+  Report = Parse.Object.extend("Report");
+
   Me = function() {
     return Parse.User.current();
+  };
+
+  mode = "test";
+
+  canSave = function(act) {
+    if (mode !== "dev") {
+      return act();
+    }
   };
 
   Backend = {
@@ -225,21 +237,24 @@
       }));
     },
     addProject: function(projectData, cb) {
-      var project;
+      var project,
+        _this = this;
       project = new Project(projectData);
       project.set("owner", Parse.User.current());
       project.setACL(new Parse.ACL(Parse.User.current()));
-      return project.save(null, this.defaultHandler(function(project) {
-        return cb(project.toJSON());
-      }));
+      return canSave(function() {
+        return project.save(null, _this.defaultHandler(function(project) {
+          return cb(project.toJSON());
+        }));
+      });
     },
     saveProject: function(projectData, cb) {
-      var projectObject;
-      if (projectData.completed) {
-        projectData = projectData;
-      }
+      var projectObject,
+        _this = this;
       projectObject = new Project(projectData);
-      return projectObject.save(null, this.defaultHandler(cb));
+      return canSave(function() {
+        return projectObject.save(null, _this.defaultHandler(cb));
+      });
     },
     deleteProject: function(projectData, cb) {
       var projectObject;
@@ -257,18 +272,146 @@
       return cb(Me().get("options"));
     },
     setOptions: function(options, cb) {
+      var _this = this;
       Me().set("options", options);
-      return Me().save(this.defaultHandler(cb));
+      return canSave(function() {
+        return Me().save(_this.defaultHandler(cb));
+      });
     },
     saveCurrentUser: function(cb) {
-      return Me().save(this.defaultHandler(cb));
+      var _this = this;
+      return canSave(function() {
+        return Me().save(_this.defaultHandler(cb));
+      });
     },
     getBudget: function(cb) {
-      return cb(Me().get("budget"));
+      return cb({
+        amount: Me().get("budget_amount")
+      });
     },
     setBudget: function(budget, cb) {
-      Me().set("budget", budget);
-      return Me().save(this.defaultHandler(cb));
+      var diff, oldBudget,
+        _this = this;
+      oldBudget = Me().get("budget_amount");
+      diff = parseFloat(budget.amount) - oldBudget;
+      if (diff === 0) {
+        return;
+      }
+      Me().increment("budget_amount", diff);
+      return canSave(function() {
+        return Me().save(_this.defaultHandler(cb));
+      });
+    },
+    GROUP_NOT_FOUND: "group_not_found",
+    getGroup: function(groupName, cb) {
+      var gq,
+        _this = this;
+      gq = new Parse.Query("Group");
+      gq.equalTo("name", groupName);
+      gq.equalTo("owner", Parse.User.current());
+      return gq.find(this.defaultHandler(function(groups) {
+        var singleGroup;
+        if (groups.length === 0) {
+          return cb(_this.GROUP_NOT_FOUND);
+        }
+        singleGroup = groups[0];
+        return cb(null, singleGroup.toJSON());
+      }));
+    },
+    saveGroup: function(groupData, cb) {
+      var gr,
+        _this = this;
+      gr = new Group(groupData);
+      return canSave(function() {
+        return gr.save(null, _this.defaultHandler(cb));
+      });
+    },
+    addGroup: function(groupData, cb) {
+      var gr,
+        _this = this;
+      gr = new Group(groupData);
+      gr.set("owner", Parse.User.current());
+      gr.setACL(new Parse.ACL(Parse.User.current()));
+      return canSave(function() {
+        return gr.save(null, _this.defaultHandler(function(group) {
+          return cb(null, group.toJSON());
+        }));
+      });
+    },
+    addToReport: function(project, task, cb) {
+      var date, dateKey, _ref,
+        _this = this;
+      date = (_ref = task.completedDate) != null ? _ref : new Date();
+      dateKey = {
+        year: date.getFullYear(),
+        month: date.getMonth()
+      };
+      return this._getReport(dateKey, function(err, report) {
+        var _ref1;
+        if (err) {
+          return cb(err);
+        }
+        report.tasks = (_ref1 = report.tasks) != null ? _ref1 : [];
+        report.tasks.push({
+          title: task.title,
+          project: project != null ? project.objectId : void 0,
+          cost: task.cost,
+          completionDate: date
+        });
+        return _this._saveReport(report, cb);
+      });
+    },
+    _addReport: function(dateKey, cb) {
+      var report,
+        _this = this;
+      report = new Report(dateKey);
+      report.set("tasks", []);
+      report.set("owner", Parse.User.current());
+      report.setACL(new Parse.ACL(Parse.User.current()));
+      return canSave(function() {
+        return report.save(null, _this.defaultHandler(function(report) {
+          return cb(null, report.toJSON());
+        }));
+      });
+    },
+    _getReport: function(dateKey, cb) {
+      var key, rq, val,
+        _this = this;
+      rq = new Parse.Query("Report");
+      for (key in dateKey) {
+        val = dateKey[key];
+        rq.equalTo(key, val);
+      }
+      rq.equalTo("owner", Parse.User.current());
+      return rq.find(this.defaultHandler(function(reports) {
+        var rep, _ref;
+        if (reports.length === 0) {
+          return _this._addReport(dateKey, cb);
+        } else {
+          rep = reports[0];
+          rep.set("tasks", (_ref = rep.get("tasks")) != null ? _ref : []);
+          return cb(null, rep.toJSON());
+        }
+      }));
+    },
+    _saveReport: function(reportData, cb) {
+      var report,
+        _this = this;
+      report = new Report(reportData);
+      return canSave(function() {
+        return report.save(null, _this.defaultHandler(cb));
+      });
+    },
+    removeFromReport: function(task, cb) {
+      return cb();
+    },
+    getReport: function(date, cb) {
+      var dateKey;
+      dateKey = {
+        year: date.getFullYear(),
+        month: date.getMonth()
+      };
+      return this._getReport(dateKey, cb);
     }
   };
 
@@ -299,13 +442,11 @@
 
 },{"./parse":3}],5:[function(require,module,exports){
 (function() {
-  var app, createTasksService, getDialog, localStorage;
+  var SHOW_COMPLETED_KEY, app, createTasksService, getDialog;
 
   createTasksService = require('./tasks/tasks');
 
-  app = angular.module('puzzle', []);
-
-  localStorage = require('./tasks/localStorage');
+  app = angular.module('puzzle', ['granula']);
 
   (require('./backend/parse_angular'))(app);
 
@@ -322,9 +463,13 @@
 
   (require('./async'))(app);
 
+  (require('./tasks/selection'))(app);
+
+  (require('./tasks/actions'))(app);
+
   (require('./auth/auth'))(app);
 
-  app.controller('global', function($scope, tasksService, backend, auth, $location) {
+  app.controller('global', function($scope, tasksService, backend, auth, $location, $route) {
     $scope.loading = true;
     tasksService.onLoad(function() {
       return $scope.loading = false;
@@ -346,11 +491,15 @@
     $scope.logout = function() {
       return auth.logout(function() {});
     };
-    return auth.check();
+    auth.check();
+    return $scope.$on('$routeChangeSuccess', function(ev, route) {
+      return $scope.section = route.section;
+    });
   });
 
   app.controller('header', function($scope, tasksService) {
     $scope.budget = tasksService.budget;
+    $scope.booking = tasksService.booking;
     $scope.$watch('currency', function(newVal) {
       if (!$scope.auth.loggedIn) {
         return;
@@ -370,7 +519,23 @@
   app.config(function($routeProvider) {
     $routeProvider.when('/', {
       controller: 'projects',
-      templateUrl: './projects.html'
+      templateUrl: './projects.html',
+      section: 'projects'
+    });
+    $routeProvider.when('/reports/:year/:month', {
+      controller: 'reports',
+      templateUrl: './reports.html',
+      section: 'reports'
+    });
+    $routeProvider.when('/reports/:year', {
+      controller: 'reports',
+      templateUrl: './reports.html',
+      section: 'reports'
+    });
+    $routeProvider.when('/reports', {
+      controller: 'reports',
+      templateUrl: './reports.html',
+      section: 'reports'
     });
     $routeProvider.when('/auth', {
       controller: 'login',
@@ -378,7 +543,8 @@
     });
     return $routeProvider.when('/:project', {
       controller: 'project',
-      templateUrl: './project.html'
+      templateUrl: './project.html',
+      section: 'projects'
     });
   });
 
@@ -394,6 +560,7 @@
       return $scope.$apply();
     };
     $scope.register = function() {
+      $scope.error = null;
       return auth.register($scope.auth.username, $scope.auth.password, {
         options: {
           currency: "RUR"
@@ -404,11 +571,12 @@
       }, onLogReg);
     };
     return $scope.login = function() {
+      $scope.error = null;
       return auth.login($scope.auth.username, $scope.auth.password, onLogReg);
     };
   });
 
-  app.controller('projects', function(tasksService, $scope, $location) {
+  app.controller('projects', function(tasksService, tasksSelection, $scope, $location) {
     $scope.projects = tasksService.projects;
     $scope.newProject = {
       title: ""
@@ -423,26 +591,33 @@
       }
       return $scope.$apply();
     };
-    return $scope.deleteProject = function(project) {
+    $scope.deleteProject = function(project) {
       return tasksService.deleteProject(project, function() {
         return $scope.$apply();
       });
     };
+    $scope.selection = tasksSelection.createSelection();
+    return $scope.$on("$destroy", function() {
+      return $scope.selection.deselectAll();
+    });
   });
 
-  app.controller('project', function(tasksService, $scope, $routeParams) {
+  SHOW_COMPLETED_KEY = 'NIH_proj_show_completed';
+
+  app.controller('project', function(tasksSelection, tasksService, $scope, $routeParams) {
     var projectId;
-    $scope.actionTitle = {
-      available: "Upgrade",
-      completed: "Downgrade",
-      unavailable: "Locked"
-    };
+    $scope.showCompleted = (typeof localStorage !== "undefined" && localStorage !== null ? localStorage[SHOW_COMPLETED_KEY] : void 0) === 'true';
+    $scope.$watch('showCompleted', function() {
+      return typeof localStorage !== "undefined" && localStorage !== null ? localStorage[SHOW_COMPLETED_KEY] = $scope.showCompleted : void 0;
+    });
     projectId = $routeParams.project;
     tasksService.onLoad(function() {
+      var visibleTasks;
       tasksService.selectProject(projectId);
       tasksService.updateStatus();
       $scope.project = tasksService.project;
-      if ($scope.project.tasks.length === 0) {
+      visibleTasks = $scope.showCompleted ? $scope.project.tasks : $scope.project.nonCompleted();
+      if (visibleTasks.length === 0) {
         $scope.addTaskDialog = true;
       }
       if (!$scope.$$phase) {
@@ -468,6 +643,12 @@
     $scope.toggleTask = function(task) {
       return tasksService.toggle(task);
     };
+    $scope.isBooked = function(task) {
+      return tasksService.isBooked(task);
+    };
+    $scope.toggleBookingTask = function(task) {
+      return tasksService.toggleBooking(task);
+    };
     $scope.taskInEdit = null;
     $scope.editTask = function(task) {
       var wasEdited;
@@ -476,6 +657,7 @@
       if (wasEdited) {
         return;
       }
+      $scope.selection.deselectAll();
       return $scope.taskInEdit = {
         original: task,
         edited: $.extend({}, task)
@@ -486,13 +668,67 @@
     };
     $scope.saveTask = function(task) {
       task.title = $scope.taskInEdit.edited.title;
-      task.cost = $scope.taskInEdit.edited.cost;
+      task.updateCost($scope.taskInEdit.edited.cost);
       tasksService.saveTask(task);
       return $scope.cancelEdit();
     };
-    return $scope.isInEdit = function(task) {
+    $scope.isInEdit = function(task) {
       var _ref;
       return ((_ref = $scope.taskInEdit) != null ? _ref.original : void 0) === task;
+    };
+    $scope.selection = tasksSelection.createSelection();
+    return $scope.$on("$destroy", function() {
+      return $scope.selection.deselectAll();
+    });
+  });
+
+  app.controller('reports', function(tasksService, $scope, $routeParams, $location) {
+    var date, month, today, year;
+    year = parseFloat($routeParams.year);
+    month = parseFloat($routeParams.month);
+    if (!isNaN(year) && isNaN(month)) {
+      month = 0;
+    }
+    today = new Date();
+    if (isNaN(year) && isNaN(month)) {
+      date = today;
+      year = date.getFullYear();
+      month = date.getMonth();
+    } else if (year > today.getFullYear() || month > today.getMonth()) {
+      $location.path("/reports");
+    } else {
+      date = new Date();
+      date.setFullYear(year);
+      date.setMonth(month);
+    }
+    $scope.loading = true;
+    $scope.month = month;
+    $scope.year = year;
+    $scope.prev = {
+      month: month === 0 ? 11 : month - 1,
+      year: month === 0 ? year - 1 : year
+    };
+    $scope.next = {
+      month: month === 11 ? 0 : month + 1,
+      year: month === 11 ? year + 1 : year
+    };
+    $scope.hasNext = true;
+    return tasksService.getReport(date, function(err, report) {
+      $scope.loading = false;
+      $scope.hasNext = year < today.getFullYear() || month < today.getMonth();
+      $scope.report = report;
+      return $scope.$apply();
+    });
+  });
+
+  app.filter('nonCompleted', function() {
+    return function(input, doFilter) {
+      if (!doFilter || input === void 0) {
+        return input;
+      }
+      return input.filter(function(t) {
+        return !t.is('completed');
+      });
     };
   });
 
@@ -534,7 +770,7 @@
           tasksToShow = availableTasks.slice().concat(unavailableTasks).slice(0, maxAmountOfTasks);
           if (tasksToShow.length < availableTasks.length + unavailableTasks.length) {
             tasksToShow.pop();
-            rest = total - maxAmountOfTasks - 1;
+            rest = total - maxAmountOfTasks + 1;
             tasksToShow.push({
               title: "Show the rest " + rest + " tasks",
               status: "more",
@@ -544,7 +780,7 @@
           return tasksToShow;
         };
         return {
-          toggle: function(task) {
+          update: function() {
             var index, prog, _i, _len, _ref, _results;
             _ref = calculateProgress(project);
             _results = [];
@@ -564,21 +800,30 @@
   app.directive('projectThumb', function(tasksService, projectThumbModel, $location) {
     return {
       scope: {
-        project: "=projectThumb"
+        project: "=projectThumb",
+        selection: "=selection"
       },
       replace: true,
-      template: "<div class=\"project\">\n  <div class=\"task-thumb {{task.status}}\"\n       ng-repeat=\"task in thumb.tasksToShow\"\n       ui-title=\"{{options.currency}} {{task.cost}}\"\n       ng-click=\"click(task)\"\n        >\n        {{task.title}}\n  </div>\n  <div class=\"progress\">\n    <span ng-repeat=\"progress in thumb.progressToShow\"\n          class=\"{{progress.name}}\"\n          ui-title=\"{{progress.amount}} {{progress.title}}\"\n          style=\"width: {{progress.percent + '%'}}\"></span>\n  </div>\n  <strong><a href=\"#/{{project.objectId}}\">{{project.name}}</a></strong>\n</div>",
+      templateUrl: "partial/project-thumb.html",
       link: function(scope, el, attrs) {
         var _ref;
         scope.thumb = projectThumbModel.create(scope.project, (_ref = attrs.thumbs) != null ? _ref : 9, scope.thumb);
-        return scope.click = function(task) {
+        scope.click = function(task) {
           if (task.status === "more") {
             return $location.path("/" + scope.project.objectId);
-          } else if (task.status !== "unavailable") {
-            tasksService.toggle(task);
-            return scope.thumb.toggle(task);
           }
         };
+        scope.isBooked = function(task) {
+          if (task.status !== 'more') {
+            return tasksService.isBooked(task);
+          }
+        };
+        scope.isSelected = function(task) {
+          return scope.selection.isSelected(task);
+        };
+        return scope.$watch("project", (function() {
+          return scope.thumb.update();
+        }), true);
       }
     };
   });
@@ -595,13 +840,9 @@
     };
   });
 
-  app.directive('editTask', function() {
-    return function(scope, el, attrs) {};
-  });
-
 }).call(this);
 
-},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./tasks/localStorage":8,"./tasks/tasks":9,"./test":10,"./ui":11}],6:[function(require,module,exports){
+},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./tasks/actions":8,"./tasks/selection":11,"./tasks/tasks":12,"./test":13,"./ui":14}],6:[function(require,module,exports){
 (function() {
   var BOTTOM, IN, LEFT, OUT, PLAIN, RIGHT, TOP, distributePartsOnPicture, drawSquareWithPattern, fitInSquare, generatePuzzle, p, puzzle, rectangle, size, splitPicture, square, _ref;
 
@@ -1077,6 +1318,61 @@
 
 },{"./calc":6}],8:[function(require,module,exports){
 (function() {
+  module.exports = function(app) {
+    app.directive('taskSelectionList', function() {
+      return {
+        restrict: 'E',
+        replace: true,
+        scope: {
+          selection: "=selection"
+        },
+        templateUrl: "actions.html",
+        link: function(scope, el, attrs) {
+          scope.options = scope.$parent.options;
+          scope.toggleBooked = function() {
+            return scope.selection.toggleBookingTask();
+          };
+          scope.toggleTask = function() {
+            scope.selection.toggle();
+            if (attrs.autoClose !== void 0) {
+              return scope.selection.deselectAll();
+            }
+          };
+          return scope.$watch("selection", function() {
+            scope.taskBooked = scope.selection.isBooked();
+            return scope.task = scope.selection.getSelectionAsTask();
+          }, true);
+        }
+      };
+    });
+    return app.directive('taskActionsList', function(tasksService) {
+      return {
+        restrict: 'E',
+        replace: true,
+        scope: {
+          task: "="
+        },
+        templateUrl: "actions.html",
+        link: function(scope, el, attrs) {
+          scope.options = scope.$parent.options;
+          scope.toggleBooked = function() {
+            return tasksService.toggleBooking(scope.task);
+          };
+          scope.toggleTask = function() {
+            return tasksService.toggle(scope.task);
+          };
+          return scope.$watch("task.groups", function() {
+            return scope.taskBooked = tasksService.isBooked(scope.task);
+          });
+        }
+      };
+    });
+  };
+
+}).call(this);
+
+},{}],9:[function(require,module,exports){
+(function() {
   var Storage, parseSafe;
 
   parseSafe = function(val) {
@@ -1172,11 +1468,141 @@
 
 }).call(this);
 
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function() {
-  var Budget, Project, Task, TasksService, clear, parseString, task, toJSON,
+
+
+}).call(this);
+
+},{}],11:[function(require,module,exports){
+(function() {
+  module.exports = function(app) {
+    app.service('tasksSelection', function(tasksService) {
+      var Selection;
+      Selection = (function() {
+        function Selection() {
+          this.tasks = [];
+        }
+
+        Selection.prototype.toggleSelection = function(task) {
+          var idx;
+          idx = this.tasks.indexOf(task);
+          if (idx === -1) {
+            return this.tasks.push(task);
+          } else {
+            return this.tasks.splice(idx, 1);
+          }
+        };
+
+        Selection.prototype.isSelected = function(task) {
+          return this.tasks.indexOf(task) > -1;
+        };
+
+        Selection.prototype.hasOtherSelectedThan = function(task) {
+          return this.tasks.length > 1 || this.tasks[0] !== task;
+        };
+
+        Selection.prototype.deselectAll = function() {
+          return this.tasks.splice(0, this.tasks.length);
+        };
+
+        Selection.prototype.toggleBookingTask = function() {
+          var selectionBooked, tasksToToggle;
+          selectionBooked = this.isBooked();
+          tasksToToggle = this.tasks.filter(function(t) {
+            return tasksService.isBooked(t) === selectionBooked;
+          });
+          return tasksToToggle.forEach(function(task) {
+            return tasksService.toggleBooking(task);
+          });
+        };
+
+        Selection.prototype.toggle = function() {
+          var nonCompleted, tasksToToggle;
+          nonCompleted = this.tasks.filter(function(t) {
+            return !t.is("completed");
+          });
+          tasksToToggle = nonCompleted.length === 0 ? this.tasks : nonCompleted;
+          return tasksToToggle.forEach(function(task) {
+            return tasksService.toggle(task);
+          });
+        };
+
+        Selection.prototype.isBooked = function() {
+          return this.tasks.every(function(t) {
+            return tasksService.isBooked(t);
+          });
+        };
+
+        Selection.prototype.getSelectionAsTask = function() {
+          var nonCompleted, task;
+          nonCompleted = this.tasks.filter(function(t) {
+            return !t.is("completed");
+          });
+          task = {};
+          if (nonCompleted.length === 0) {
+            task.cost = this.tasks.map(function(t) {
+              return t.cost;
+            }).reduce((function(a, b) {
+              return a + b;
+            }), 0);
+            task.status = "completed";
+            task;
+          } else {
+            task.cost = nonCompleted.map(function(t) {
+              return t.cost;
+            }).reduce((function(a, b) {
+              return a + b;
+            }), 0);
+            task.status = tasksService.getStatusForCost(task.cost);
+          }
+          return task;
+        };
+
+        return Selection;
+
+      })();
+      return {
+        createSelection: function() {
+          return new Selection();
+        }
+      };
+    });
+    return app.directive('selectTo', function() {
+      return function(scope, el, attrs) {
+        var selection, useCtrl;
+        selection = scope.$eval(attrs.selectTo);
+        useCtrl = attrs.selectWith === 'ctrl-click';
+        return el.click(function(e) {
+          var objectToSelect;
+          objectToSelect = scope.$eval(attrs.select);
+          if (useCtrl && !e.ctrlKey && selection.hasOtherSelectedThan(objectToSelect)) {
+            selection.deselectAll();
+          }
+          selection.toggleSelection(objectToSelect);
+          return scope.$apply();
+        });
+      };
+    });
+  };
+
+}).call(this);
+
+},{}],12:[function(require,module,exports){
+(function() {
+  var Budget, EventEmitter, Group, Project, Task, TaskEvent, TasksService, clear, copyProperties, isInternal, parseString, toFloat, toJSON,
     __slice = [].slice,
-    __hasProp = {}.hasOwnProperty;
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  toFloat = function(something) {
+    var fl;
+    fl = parseFloat(something);
+    if (isNaN(fl)) {
+      fl = 0;
+    }
+    return fl;
+  };
 
   Budget = (function() {
     function Budget(amount) {
@@ -1185,18 +1611,15 @@
 
     Budget.prototype.set = function(amount) {
       this.amount = amount;
-      this.amount = parseFloat(this.amount);
-      if (isNaN(this.amount)) {
-        return this.amount = 0;
-      }
+      return this.amount = toFloat(this.amount);
     };
 
     Budget.prototype.increase = function(delta) {
-      return this.set(this.amount + parseFloat(delta));
+      return this.set(this.amount + toFloat(delta));
     };
 
     Budget.prototype.decrease = function(delta) {
-      return this.set(this.amount - parseFloat(delta));
+      return this.set(this.amount - toFloat(delta));
     };
 
     Budget.prototype.isEnoughFor = function(money) {
@@ -1207,11 +1630,129 @@
 
   })();
 
-  Task = (function() {
-    function Task(title, cost, status) {
+  Group = (function() {
+    function Group(id, name, tasks) {
+      this.id = id;
+      this.name = name;
+      this.tasks = tasks != null ? tasks : [];
+      this.amount = 0;
+      this._recalculate();
+    }
+
+    Group.prototype._contains = function(task) {
+      return this.tasks.indexOf(task) > -1;
+    };
+
+    Group.prototype._listedIn = function(task) {
+      return task.groups.indexOf(this.name) > -1;
+    };
+
+    Group.prototype._recalculate = function() {
+      var _ref;
+      return this.amount = (_ref = this.tasks.map(function(t) {
+        return t.cost;
+      }).reduce((function(a, b) {
+        return a + b;
+      }), 0)) != null ? _ref : 0;
+    };
+
+    Group.prototype.linkTask = function(task) {
+      return this.tasks.push(task);
+    };
+
+    Group.prototype.onTaskGroupChange = function(task) {
+      if (this._listedIn(task)) {
+        if (!this._contains(task)) {
+          this.tasks.push(task);
+          return this.amount += toFloat(task.cost);
+        }
+      } else {
+        if (this._contains(task)) {
+          this.tasks = this.tasks.filter(function(t) {
+            return t !== task;
+          });
+          return this.amount -= toFloat(task.cost);
+        }
+      }
+    };
+
+    Group.prototype.onTaskCostChange = function(task, oldCost, newCost) {
+      if (!this._listedIn(task)) {
+        return;
+      }
+      return this.amount = this.amount - toFloat(oldCost) + toFloat(newCost);
+    };
+
+    Group.prototype.onTaskStatusChange = function(task, oldStatus, newStatus) {
+      if (!this._listedIn(task)) {
+        return;
+      }
+      if (newStatus === "completed") {
+        return this.amount -= toFloat(task.cost);
+      } else if (oldStatus === "completed") {
+        return this.amount += toFloat(task.cost);
+      }
+    };
+
+    Group.prototype.serialize = function() {
+      return {
+        objectId: this.id,
+        name: this.name,
+        amount: this.amount
+      };
+    };
+
+    Group.prototype.deserialize = function(groupData) {
+      this.id = groupData.objectId;
+      this.name = groupData.name;
+      return this.amount = groupData.amount;
+    };
+
+    return Group;
+
+  })();
+
+  EventEmitter = (function() {
+    function EventEmitter() {}
+
+    EventEmitter.prototype.trigger = function() {
+      var args, eventName;
+      eventName = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      return $(this).trigger(eventName, args);
+    };
+
+    EventEmitter.prototype.on = function(eventName, listener) {
+      return $(this).on(eventName, function() {
+        var args, event;
+        event = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+        return listener.apply(null, args);
+      });
+    };
+
+    EventEmitter.prototype.off = function(eventName, listener) {
+      return $(this).off(eventName, listener);
+    };
+
+    return EventEmitter;
+
+  })();
+
+  TaskEvent = {
+    StatusChange: "task_status_change",
+    CostChange: "task_cost_change",
+    GroupChange: "task_groups_change"
+  };
+
+  Task = (function(_super) {
+    __extends(Task, _super);
+
+    function Task(title, cost, status, groups) {
       this.title = title;
       this.cost = cost != null ? cost : 0;
       this.status = status != null ? status : "";
+      this.groups = groups != null ? groups : [];
+      Task.__super__.constructor.apply(this, arguments);
+      this.cost = toFloat(this.cost);
     }
 
     Task.prototype.complete = function(budget) {
@@ -1221,8 +1762,37 @@
       if (this.status === !"available") {
         throw new Error("Task '" + this.title + "' cannot be done");
       }
-      this.status = "completed";
+      this._change("status", "completed");
+      this.completedDate = new Date();
       return budget.decrease(this.cost);
+    };
+
+    Task.prototype._change = function(field, newVal) {
+      var oldVal;
+      oldVal = this[field];
+      if (oldVal === newVal) {
+        return;
+      }
+      this[field] = newVal;
+      return this.trigger("task_" + field + "_change", oldVal, newVal);
+    };
+
+    Task.prototype.updateCost = function(newCost) {
+      return this._change("cost", newCost);
+    };
+
+    Task.prototype.addToGroup = function(groupName) {
+      return this._change("groups", this.groups.concat([groupName]));
+    };
+
+    Task.prototype.removeFromGroup = function(groupName) {
+      return this._change("groups", this.groups.filter(function(g) {
+        return g !== groupName;
+      }));
+    };
+
+    Task.prototype.isInGroup = function(groupName) {
+      return this.groups.indexOf(groupName) > -1;
     };
 
     Task.prototype.updateStatus = function(budget) {
@@ -1231,7 +1801,7 @@
       if (this.status === "completed") {
         return false;
       }
-      this.status = budget.isEnoughFor(this.cost) ? "available" : "unavailable";
+      this._change("status", budget.isEnoughFor(this.cost) ? "available" : "unavailable");
       return this.status !== oldStatus;
     };
 
@@ -1239,7 +1809,7 @@
       if (this.status === !"completed") {
         throw new Error("Task '" + this.title + "' cannot be undone - it is not completed");
       }
-      this.status = "";
+      this._change("status", "");
       budget.increase(this.cost);
       return this.updateStatus(budget);
     };
@@ -1248,13 +1818,11 @@
       return this.status === status;
     };
 
+    Task.prototype.toJSON = function() {};
+
     return Task;
 
-  })();
-
-  task = function(title, cost, status) {
-    return new Task(title, cost, status);
-  };
+  })(EventEmitter);
 
   parseString = function(str, cost) {
     var ci, probablyCost;
@@ -1316,69 +1884,185 @@
       return this.byStatus("unavailable");
     };
 
+    Project.prototype.nonCompleted = function() {
+      return this.tasks.filter(function(t) {
+        return !t.is("completed");
+      });
+    };
+
+    Project.prototype.toJSON = function() {
+      var key, newObj, val;
+      newObj = angular.copy(this);
+      for (key in newObj) {
+        if (!__hasProp.call(newObj, key)) continue;
+        val = newObj[key];
+        if ($.isFunction(val)) {
+          delete newObj[key];
+        }
+      }
+      newObj.tasks = this.tasks.map(function(t) {
+        return t.toJSON();
+      });
+      return newObj;
+    };
+
     return Project;
 
   })();
 
-  toJSON = function(obj) {
+  isInternal = function(prop) {
+    return prop.indexOf('_eventObj_') === 0 || prop.indexOf('$$hashKey') === 0;
+  };
+
+  copyProperties = function(obj) {
     var key, newObj, val;
-    newObj = angular.copy(obj);
-    for (key in newObj) {
-      if (!__hasProp.call(newObj, key)) continue;
-      val = newObj[key];
-      if ($.isFunction(val)) {
-        delete newObj[key];
+    if (angular.isArray(obj)) {
+      return obj.map(function(item) {
+        return copyProperties(item);
+      });
+    } else if (angular.isObject(obj)) {
+      newObj = {};
+      for (key in obj) {
+        if (!__hasProp.call(obj, key)) continue;
+        val = obj[key];
+        if (!($.isFunction(val) || isInternal(key))) {
+          newObj[key] = copyProperties(val);
+        }
       }
+      return newObj;
+    } else {
+      return obj;
     }
-    return newObj;
+  };
+
+  toJSON = function(obj) {
+    return copyProperties(obj);
   };
 
   TasksService = function(storage) {
+    var BOOKED, addTask;
     if (storage == null) {
       storage = require('./localStorage');
     }
+    addTask = function() {
+      var args, service, task;
+      service = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+      task = (function(func, args, ctor) {
+        ctor.prototype = func.prototype;
+        var child = new ctor, result = func.apply(child, args);
+        return Object(result) === result ? result : child;
+      })(Task, args, function(){});
+      task.on(TaskEvent.StatusChange, function(oldStatus, newStatus) {
+        return service.onTaskStatusChange(task, oldStatus, newStatus);
+      });
+      task.on(TaskEvent.CostChange, function(oldCost, newCost) {
+        return service.onTaskCostChange(task, oldCost, newCost);
+      });
+      task.on(TaskEvent.GroupChange, function() {
+        return service.onTaskGroupChange(task);
+      });
+      return task;
+    };
+    BOOKED = "booked";
     return {
       project: {},
       budget: new Budget(0),
       projects: [],
       options: {},
       loading: true,
+      booking: new Group(null, BOOKED),
+      onTaskStatusChange: function(task, oldStatus, newStatus) {
+        this.booking.onTaskStatusChange(task, oldStatus, newStatus);
+        return storage.saveGroup(this.booking.serialize());
+      },
+      onTaskCostChange: function(task, oldCost, newCost) {
+        this.booking.onTaskCostChange(task, oldCost, newCost);
+        return storage.saveGroup(this.booking.serialize());
+      },
+      onTaskGroupChange: function(task) {
+        this.booking.onTaskGroupChange(task);
+        return storage.saveGroup(this.booking.serialize());
+      },
       load: function(cb) {
         var _this = this;
         clear(this.project, this.projects, this.options);
         this.loading = true;
-        return storage.getProjects(function(projects, error) {
-          if (error) {
-            return cb(error);
-          }
-          projects.forEach(function(p) {
-            var proj;
-            p.tasks = p.tasks.map(function(t) {
-              return new Task(t.title, t.cost, t.status);
-            });
-            proj = new Project();
-            angular.copy(p, proj);
-            return _this.projects.push(proj);
-          });
-          return storage.getBudget(function(budget, error) {
+        return this._loadGroups(function() {
+          return storage.getProjects(function(projects, error) {
             if (error) {
               return cb(error);
             }
-            _this.setBudget(budget != null ? budget.amount : void 0);
-            return storage.getOptions(function(options, error) {
-              if (options) {
-                angular.copy(options, _this.options);
-              }
+            projects.forEach(function(p) {
+              var proj;
+              proj = new Project();
+              angular.copy(p, proj);
+              proj.tasks = proj.tasks.map(function(t) {
+                return addTask(_this, t.title, t.cost, t.status, t.groups);
+              });
+              _this._linkTasksAndGroups(proj.tasks);
+              return _this.projects.push(proj);
+            });
+            _this.booking._recalculate();
+            return storage.getBudget(function(budget, error) {
               if (error) {
                 return cb(error);
               }
-              storage.saveCurrentUser();
-              _this.loading = false;
-              $(_this).trigger("tasks.loaded");
-              return cb();
+              _this.setBudget(budget != null ? budget.amount : void 0);
+              return storage.getOptions(function(options, error) {
+                if (options) {
+                  angular.copy(options, _this.options);
+                }
+                if (error) {
+                  return cb(error);
+                }
+                storage.saveCurrentUser();
+                _this.loading = false;
+                $(_this).trigger("tasks.loaded");
+                return cb();
+              });
             });
           });
         });
+      },
+      _loadGroups: function(cb) {
+        var _this = this;
+        return storage.getGroup(BOOKED, function(err, group) {
+          var next;
+          next = function(err, group) {
+            _this.booking.deserialize(group);
+            return cb();
+          };
+          if (err === storage.GROUP_NOT_FOUND) {
+            return storage.addGroup({
+              name: BOOKED,
+              amount: 0
+            }, next);
+          } else {
+            return next(null, group);
+          }
+        });
+      },
+      _linkTasksAndGroups: function(tasks) {
+        var group, groups, task, _i, _len, _results;
+        groups = [this.booking];
+        _results = [];
+        for (_i = 0, _len = tasks.length; _i < _len; _i++) {
+          task = tasks[_i];
+          _results.push((function() {
+            var _j, _len1, _results1;
+            _results1 = [];
+            for (_j = 0, _len1 = groups.length; _j < _len1; _j++) {
+              group = groups[_j];
+              if (task.isInGroup(group.name)) {
+                _results1.push(group.linkTask(task));
+              } else {
+                _results1.push(void 0);
+              }
+            }
+            return _results1;
+          })());
+        }
+        return _results;
       },
       setCurrency: function(c, cb) {
         if (cb == null) {
@@ -1494,7 +2178,7 @@
           return;
         }
         _ref = parseString(name, cost), name = _ref.name, cost = _ref.cost;
-        t = task(name, cost);
+        t = addTask(this, name, cost);
         t.updateStatus(this.budget);
         return this._addTask(t);
       },
@@ -1513,11 +2197,34 @@
       saveTask: function(task) {
         return this._saveCurrentProject();
       },
+      toggleBooking: function(task) {
+        if (task.isInGroup(BOOKED)) {
+          task.removeFromGroup(BOOKED);
+        } else {
+          task.addToGroup(BOOKED);
+        }
+        storage.saveGroup(this.booking.serialize());
+        return this._saveCurrentProject();
+      },
+      isBooked: function(task) {
+        return task.isInGroup(BOOKED);
+      },
+      _getProject: function(task) {
+        var found;
+        found = this.projects.filter(function(p) {
+          return p.tasks.indexOf(task) !== -1;
+        });
+        if (found.length === 0) {
+          return null;
+        }
+        return found[0];
+      },
       toggle: function(task) {
         if (task.is("completed")) {
           task.revert(this.budget);
         } else if (task.is("available")) {
           task.complete(this.budget);
+          storage.addToReport(this._getProject(task), task, function() {});
         } else {
           throw new Error("not.available");
         }
@@ -1539,6 +2246,19 @@
         } else {
           return 100 * completed / total;
         }
+      },
+      getBooking: function() {
+        return this.booking;
+      },
+      getStatusForCost: function(cost) {
+        if (this.budget.isEnoughFor(cost)) {
+          return "available";
+        } else {
+          return "unavailable";
+        }
+      },
+      getReport: function(date, cb) {
+        return storage.getReport(date, cb);
       }
     };
   };
@@ -1547,7 +2267,7 @@
 
 }).call(this);
 
-},{"./localStorage":8}],10:[function(require,module,exports){
+},{"./localStorage":9}],13:[function(require,module,exports){
 (function() {
   var app, drawImageWithGrid, drawPuzzlePiece, loadImage, loadPuzzle, makePuzzlePiece, splitPicture, updatePartVisibility, _ref;
 
@@ -1644,10 +2364,10 @@
 
 }).call(this);
 
-},{"./puzzle/puzzle":7}],11:[function(require,module,exports){
+},{"./puzzle/puzzle":7}],14:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
-    var getDialog, setVal, toggle;
+    var addZeros, getDialog, setVal, toggle;
     setVal = function(scope, name, val) {
       var act;
       act = function() {
@@ -1784,7 +2504,11 @@
           var cls, deleteTo;
           cls = "" + attrs.deleteTo + "-item";
           $(el).addClass(cls).draggable({
-            revert: true
+            revert: true,
+            opacity: 0.8
+          });
+          $(el).on("dragstart", function() {
+            return $(el).addClass(cls);
           });
           $(el).data("onDrop", function() {
             if (attrs.onDelete) {
@@ -1805,7 +2529,8 @@
               return deleteTo.removeClass("drop-here");
             },
             drop: function(e, ui) {
-              return ui.draggable.data("onDrop")();
+              ui.draggable.data("onDrop")();
+              return true;
             }
           });
         }
@@ -1819,11 +2544,18 @@
     });
     app.directive('countdown', function() {
       return function(scope, el, attrs) {
-        var inFocus, target, to, val;
+        var inFocus, setElVal, target, to, val;
         to = null;
         target = null;
         val = 0;
         inFocus = false;
+        setElVal = function(val) {
+          if (el.is("input")) {
+            return el.val(val);
+          } else {
+            return el.text(val + "");
+          }
+        };
         el.on('focus', function() {
           return inFocus = true;
         }).on('blur', function() {
@@ -1844,6 +2576,7 @@
             }
             if (target === val) {
               el.removeClass("start-counting");
+              setElVal(target);
               return;
             }
             step = (_ref = scope.$eval(attrs.step)) != null ? _ref : 1;
@@ -1858,7 +2591,7 @@
                 val = target;
               }
             }
-            el.val(val);
+            setElVal(val);
             return to = setTimeout(doStep, 10);
           };
           return doStep();
@@ -1875,6 +2608,33 @@
         });
       };
     });
+    addZeros = function(num, amount) {
+      var str;
+      str = num + '';
+      while (str.length < amount) {
+        str = '0' + str;
+      }
+      return str;
+    };
+    app.filter('cost', function() {
+      return function(input) {
+        var div, parts, rem;
+        parts = [];
+        div = parseFloat(input);
+        if (isNaN(div)) {
+          div = 0;
+        }
+        if (div === 0) {
+          return 0;
+        }
+        while (div > 0) {
+          rem = div % 1000;
+          div = div / 1000 | 0;
+          parts.unshift(div > 0 ? addZeros(rem, 3) : rem);
+        }
+        return parts.join(' ');
+      };
+    });
     return {
       getDialog: getDialog
     };
@@ -1882,5 +2642,5 @@
 
 }).call(this);
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11])
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14])
 ;

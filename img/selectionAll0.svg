@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd">
+<!-- Создано Microsoft Visio 11.0, Экспорт SVG, версия 1.0 selectionAll0.svg Страница-1 -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:v="http://schemas.microsoft.com/visio/2003/SVGExtensions/" width="0.23663in"
+		height="0.23663in" viewBox="0 0 17.0374 17.0374" xml:space="preserve" color-interpolation-filters="sRGB" class="st3">
+	<v:documentProperties v:langID="1049" v:viewMarkup="false"/>
+
+	<style type="text/css">
+	<![CDATA[
+		.st1 {fill:none;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.72}
+		.st2 {fill:#ffffff;stroke:#000000;stroke-linecap:round;stroke-linejoin:round;stroke-width:0.72}
+		.st3 {fill:none;fill-rule:evenodd;font-size:12;overflow:visible;stroke-linecap:square;stroke-miterlimit:3}
+	]]>
+	</style>
+
+	<g v:mID="0" v:index="1" v:groupContext="foregroundPage">
+		<title>Страница-1</title>
+		<v:pageProperties v:drawingScale="0.0393701" v:pageScale="0.0393701" v:drawingUnits="24" v:shadowOffsetX="8.50394"
+				v:shadowOffsetY="-8.50394"/>
+		<g id="shape587-1" v:mID="587" v:groupContext="shape" transform="translate(12.0472,-5.03185) rotate(45)">
+			<title>Лист.587</title>
+			<ellipse cx="4.96063" cy="12.0767" rx="4.96063" ry="4.96063" class="st1"/>
+		</g>
+		<g id="shape588-3" v:mID="588" v:groupContext="shape" transform="translate(15.0538,-2.02526) rotate(45)">
+			<title>Лист.588</title>
+			<ellipse cx="4.96063" cy="12.0767" rx="4.96063" ry="4.96063" class="st2"/>
+		</g>
+	</g>
+</svg>

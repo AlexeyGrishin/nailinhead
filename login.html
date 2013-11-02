@@ -1,11 +1,12 @@
 <div>
-    {{ error }}
+    <ng-include src="'partial/error-panel.html'"></ng-include>
     <div class="intro clearfix">
         <div class="information">
-            <h4 gr-key>Welcome to nailinhead application!</h4>
+            <h4 gr-key>Welcome to <b>nailinhead</b> application!</h4>
             <p gr-key>Here will be description. Soon. Really.</p>
         </div>
         <div class="login-form">
+            <lang-selector></lang-selector>
             <form class="login">
                 <label>
                     <span gr-key>Username:</span> <input ng-model="auth.username"/>
@@ -14,9 +15,9 @@
                     <span gr-key>Password:</span> <input ng-model="auth.password" type="password"/>
                 </label>
                 <section class="buttons">
-                    <button class="btn btn-primary" ng-click="login()" gr-key>Login</button>
+                    <button class="btn btn-primary" long-click="login()" processing="logReg" gr-key>Login</button>
                     <span gr-key>-or-</span>
-                    <button class="btn btn-good" ng-click="register()" gr-key>Register</button>
+                    <button class="btn btn-good" long-click="register()" processing="logReg" gr-key>Register</button>
                 </section>
             </form>
         </div>

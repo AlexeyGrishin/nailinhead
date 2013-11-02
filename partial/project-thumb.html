@@ -7,10 +7,16 @@
          ng-click="click(task)"
             >
         <span class='tag tag-cyan' ng-show='isBooked(task)'>booked</span>
-        {{task.title}}
+        <ng-switch on="task.status">
+            <span ng-switch-when="more" gr-key>Show the rest {{task.rest}} task(s)</span>
+            <span ng-switch-default>{{task.title}}</span>
+        </ng-switch>
+
     </div>
-    <div class="hint" ng-show="thumb.tasksToShow.length == 0">
-        <span gr-key>No ongoing tasks. You may delete this project or </span><a href="#/{{project.objectId}}" gr-key>add new task</a>
+    <div class="hint" ng-show="thumb.tasksToShow.length == 0" gr-key>
+        No ongoing tasks. You may delete this project or <a href="#/{{project.objectId}}">add new task</a>
     </div>
     <strong><a href="#/{{project.objectId}}">{{project.name}}</a></strong>
+    <div class="triangle-btn delete" ng-click="deleteProject()" ng-show="thumb.tasksToShow.length == 0"
+         title="Click to delete the project" gr-attrs="title"><i></i></div>
 </div>

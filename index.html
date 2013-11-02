@@ -42,6 +42,7 @@
                 <li ng-class="{selected: section=='projects'}"><a href="#/" gr-key> Projects</a></li>
                 <li ng-class="{selected: section=='reports'}"><a href="#/reports" gr-key>Reports</a></li>
             </ul>
+            <lang-selector></lang-selector>
             <strong class="user-name" gr-key>You are logged in as {{auth.currentUser.username}}</strong>
             <a class="logout link-danger" ng-click="logout()" gr-key>Logout</a>
 

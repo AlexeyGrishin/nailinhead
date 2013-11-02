@@ -1,0 +1,11 @@
+<p class='error' ng-show='error'>
+    <ng-switch on='error.code'>
+        <span ng-switch-when='200' gr-key>Username is missing</span>
+        <span ng-switch-when='201' gr-key>Password is missing</span>
+        <span ng-switch-when='202' gr-key>Username is already taken by another user</span>
+        <span ng-switch-when='101'>
+            <span ng-show='error.isLogin'>Invalid username or password</span>
+            <span ng-hide='error.isLogin'>Object not found</span>
+        </span>
+    </ng-switch>
+</p>

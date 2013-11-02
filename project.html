@@ -9,9 +9,6 @@
                 dialog-panel-trigger="addTaskDialog"
                 gr-key
                 >Add new task</button>
-        <button class="btn btn-danger btn-drop-area delete-task" gr-key>
-            Drop to delete
-        </button>
     </div>
 
 </div>
@@ -28,8 +25,6 @@
     </div>
 <ul class="tasks-list">
     <li ng-repeat="task in project.tasks | nonCompleted:!showCompleted"
-        delete-to="delete-task"
-        on-delete="deleteTask(task)"
         class="{{task.status}}"
         ng-class="{selected: selection.isSelected(task)}"
             >
@@ -37,6 +32,7 @@
             {{task.title}}
         </strong>
         <task-actions-list task="task"></task-actions-list>
+        <div class="triangle-btn edit" ng-click="editTask(task)" title="Click to edit or delete the task" gr-attrs="title"><i></i></div>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"
                       do-not-clear-form
@@ -50,6 +46,7 @@
             <label>
                 <currency/> <input ng-model="taskInEdit.edited.cost" class="input-short"/>
             </label>
+            <div class="triangle-btn delete" ng-click="deleteTask(task)" title="Click to delete the task" gr-attrs="title"><i></i></div>
         </dialog-panel>
 
     </li>

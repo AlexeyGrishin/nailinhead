@@ -150,6 +150,29 @@
   box-shadow: none;
   cursor: default;
 }
+.btn.long-click {
+  text-indent: 16px;
+}
+.btn.processing {
+  background: #aaaaaa;
+  color: white;
+  white-space: nowrap;
+  background-image: url(../img/loading.gif);
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+.btn.processing:hover {
+  color: white;
+  cursor: default;
+}
+.btn[disabled] {
+  background: #aaaaaa;
+  color: white;
+}
+.btn[disabled]:hover {
+  color: white;
+  cursor: default;
+}
 button.link {
   font-variant: small-caps;
   font-size: 14px;
@@ -244,6 +267,29 @@ button.link.btn-drop-area:hover {
   box-shadow: none;
   cursor: default;
 }
+button.link.long-click {
+  text-indent: 16px;
+}
+button.link.processing {
+  background: #aaaaaa;
+  color: white;
+  white-space: nowrap;
+  background-image: url(../img/loading.gif);
+  background-repeat: no-repeat;
+  background-position: left center;
+}
+button.link.processing:hover {
+  color: white;
+  cursor: default;
+}
+button.link[disabled] {
+  background: #aaaaaa;
+  color: white;
+}
+button.link[disabled]:hover {
+  color: white;
+  cursor: default;
+}
 .dialog-panel {
   width: 100%;
   -webkit-transition: all 0.2s ease-out;
@@ -329,6 +375,41 @@ input:active {
 .tag.tag-cyan {
   background-color: #36b3a0;
 }
+p.error {
+  background: #ffe6e6;
+  color: #6e1e1e;
+  box-shadow: 0 0 2px #ff6666;
+  padding: 5px 10px;
+  font-size: 14px;
+}
+.lang-selector button {
+  width: 18px;
+  height: 13px;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: center center;
+  border: 0;
+  opacity: 0.5;
+}
+.lang-selector button:active {
+  -webkit-transform: translate(1px, 1px);
+  -moz-transform: translate(1px, 1px);
+  -o-transform: translate(1px, 1px);
+  -ms-transform: translate(1px, 1px);
+  transform: translate(1px, 1px);
+}
+.lang-selector button[data-lang=en] {
+  background-image: url('../img/en.png');
+}
+.lang-selector button[data-lang=ru] {
+  background-image: url('../img/ru.png');
+}
+.lang-selector button.selected {
+  opacity: 1;
+  -webkit-box-shadow: 0 0 2px #70701e;
+  -moz-box-shadow: 0 0 2px #70701e;
+  box-shadow: 0 0 2px #70701e;
+}
 ul.projects-list {
   list-style: none;
   padding-left: 0;
@@ -385,6 +466,36 @@ ul.projects-list li > div.project > .progress > span.completed {
 }
 ul.projects-list li > div.project > .progress > span.available {
   background-color: #ffff66;
+}
+ul.projects-list li > div.project .triangle-btn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+ul.projects-list li > div.project .triangle-btn.delete {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid #6e1e1e;
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+}
+ul.projects-list li > div.project .triangle-btn.delete > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+ul.projects-list li > div.project .triangle-btn.delete:hover {
+  width: 1px;
+}
+ul.projects-list li > div.project .triangle-btn.delete:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
+}
+ul.projects-list li > div.project .triangle-btn.delete i {
+  background: url(../img/trash_white.png) no-repeat center center;
 }
 ul.projects-list li > div.project > .task-thumb {
   float: left;
@@ -486,7 +597,7 @@ ul.tasks-list li {
 ul.tasks-list li > strong {
   display: block;
   line-height: 50px;
-  margin-right: 100px;
+  margin-right: 263.33333333333337px;
   font-size: 16px;
   padding-left: 30px;
 }
@@ -515,12 +626,69 @@ ul.tasks-list li.completed strong {
 ul.tasks-list li.unavailable strong {
   color: gray;
 }
+ul.tasks-list li .triangle-btn {
+  position: absolute;
+  right: 0;
+  top: 16.666666666666664px;
+}
+ul.tasks-list li .triangle-btn.edit {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid #bfbfbf;
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+}
+ul.tasks-list li .triangle-btn.edit > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+ul.tasks-list li .triangle-btn.edit:hover {
+  width: 1px;
+}
+ul.tasks-list li .triangle-btn.edit:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
+}
+ul.tasks-list li .triangle-btn.edit i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
+ul.tasks-list li .triangle-btn.delete {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid #6e1e1e;
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+  top: auto;
+  bottom: 0;
+}
+ul.tasks-list li .triangle-btn.delete > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+ul.tasks-list li .triangle-btn.delete:hover {
+  width: 1px;
+}
+ul.tasks-list li .triangle-btn.delete:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
+}
+ul.tasks-list li .triangle-btn.delete i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
 section.task-actions {
   position: absolute;
   display: block;
   top: 0;
   bottom: 0;
-  right: 10px;
+  right: 43.333333333333336px;
   width: 210px;
   text-align: right;
 }
@@ -604,7 +772,7 @@ section.task-actions.unavailable .status-action > span {
   cursor: pointer;
   position: absolute;
   left: 0;
-  right: 220px;
+  right: 263.33333333333337px;
 }
 .selection-panel > .selection-content > strong:hover {
   background-image: url(../img/selectionAll0.svg);
@@ -622,12 +790,42 @@ section.task-actions.unavailable .status-action > span {
   border-bottom-color: black;
   text-decoration: none;
 }
+.selection-panel > .selection-content .triangle-btn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+.selection-panel > .selection-content .triangle-btn.delete {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid #6e1e1e;
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+}
+.selection-panel > .selection-content .triangle-btn.delete > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+.selection-panel > .selection-content .triangle-btn.delete:hover {
+  width: 1px;
+}
+.selection-panel > .selection-content .triangle-btn.delete:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
+}
+.selection-panel > .selection-content .triangle-btn.delete i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
 .intro {
   font-size: 14px;
   margin-top: 40px;
 }
 .intro > div {
-  height: 200px;
+  height: 250px;
   float: left;
   margin: 10px;
   box-sizing: border-box;
@@ -646,6 +844,10 @@ section.task-actions.unavailable .status-action > span {
   padding-top: 20px;
   width: 280px;
 }
+.intro > div.login-form > .lang-selector {
+  float: right;
+  margin-right: 20px;
+}
 .intro > div.login-form > form {
   background-color: transparent;
   color: black;
@@ -662,6 +864,9 @@ section.task-actions.unavailable .status-action > span {
 }
 .intro > div.login-form > form section.buttons {
   padding-left: 90px;
+}
+.intro > div.login-form > form section.buttons button {
+  margin-bottom: 5px;
 }
 body {
   font-family: "Segoe WP", "Verdana", sans-serif;
@@ -816,10 +1021,14 @@ body {
   font-weight: bold;
   border-bottom: 2px solid #36b3a0;
 }
-.footer .footer-content strong.user-name {
+.footer .footer-content > .lang-selector {
+  display: inline-block;
+  margin-right: 20px;
+}
+.footer .footer-content > strong.user-name {
   padding-right: 10px;
 }
-.footer .footer-content button {
+.footer .footer-content > button {
   float: right;
 }
 span.currency {

@@ -4,8 +4,8 @@
         <span ng-show="!taskBooked" gr-key>not booked</span>
     </div>
     <div ng-switch="task.status" class="status-action">
-        <button class="btn btn-primary" ng-switch-when="available" ng-click="toggleTask()" title="Click to buy this item">  {{task.cost | cost}}</button>
-        <span ng-switch-when="completed"><span>  {{task.cost | cost}}</span>  <a ng-click="toggleTask()" class="link-danger" title="Click to cancel buying this item">&times;</a></span>
-        <span ng-switch-default title="This item is unavailable"> {{task.cost | cost}}</span>
+        <button class="btn btn-primary" ng-switch-when="available" ng-click="toggleTask()" title="Click to buy this item" gr-attrs="title">  {{task.cost | cost}}</button>
+        <span ng-switch-when="completed"><span>  {{task.cost | cost}}</span>  <a ng-click="toggleTask()" class="link-danger" title="Click to cancel buying this item" gr-attrs="title">&times;</a></span>
+        <span ng-switch-default title="This item is unavailable" gr-attrs="title"> {{task.cost | cost}}</span>
     </div>
 </section>

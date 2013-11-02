@@ -110,17 +110,21 @@
             return this._registerOriginal();
           },
           setLanguage: function(lang) {
-            var loadAsync, loadSync,
+            var loadAsync, loadSync, _ref,
               _this = this;
             if (lang === this.language) {
               return;
             }
+            if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
+              return;
+            }
             loadAsync = function(onLoad) {
               $rootScope.$broadcast('gr-lang-load', lang);
+              asyncLoaders[lang].loading = true;
               return asyncLoaders[lang](function(error, data) {
                 if (error) {
                   console.error(error);
-                  return $rootScope.$broadcas('gr-lang-load-error', error);
+                  return $rootScope.$broadcast('gr-lang-load-error', error);
                 } else {
                   _this.register(lang, data);
                   delete asyncLoaders[lang];
@@ -164,6 +168,12 @@
               language = this.language;
             }
             return granula.canTranslate(language, key);
+          },
+          canTranslateTo: function(language) {
+            if (language == null) {
+              language = this.language;
+            }
+            return granula.canTranslateTo(language) || asyncLoaders[language];
           },
           translate: function() {
             var args, options, pattern, realKey;
@@ -254,7 +264,7 @@
         throw new Error("gr-lang for script element shall have value - name of language");
       }
       if (attrs.src) {
-        return grService.register(langName, function(cb) {
+        grService.register(langName, function(cb) {
           var _this = this;
           return $http({
             method: "GET",
@@ -267,12 +277,13 @@
         });
       } else {
         try {
-          return grService.register(langName, JSON.parse(el.text()));
+          grService.register(langName, JSON.parse(el.text()));
         } catch (_error) {
           e = _error;
           throw new Error("Cannot parse json for language '" + langName + "'", e);
         }
       }
+      return void 0;
     };
     compileOther = function(el, attrs) {
       var requireInterpolation;
@@ -280,7 +291,7 @@
         grService.setOriginalLanguage(attrs.grLangOfText);
       }
       requireInterpolation = $interpolate(attrs.grLang, true);
-      if (requireInterpolation) {
+      if (requireInterpolation || !grService.canTranslateTo(attrs.grLang)) {
         grService.setLanguage(grService.originalLanguage);
       } else {
         grService.setLanguage(attrs.grLang);
@@ -304,34 +315,34 @@
     };
   });
 
-  processDomText = function(grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn) {
+  processDomText = function(grService, $interpolate, interpolateKey, startKey, readTextFn, writeTextFn, el) {
     var compiled, interpolateFn, pattern;
-    pattern = readTextFn();
+    pattern = readTextFn(el);
     if (startKey) {
       grService.save(startKey, pattern);
       compiled = grService.compile(startKey);
       interpolateFn = $interpolate(compiled, true);
     }
     if (interpolateFn || interpolateKey) {
-      writeTextFn('');
+      writeTextFn(el, '');
     }
     return {
-      link: function(scope) {
+      link: function(scope, el) {
         var key, onKeyChanged, onLanguageChanged, onVariablesChanged, outputFn;
         outputFn = interpolateFn;
         key = startKey;
         onLanguageChanged = function() {
           outputFn = $interpolate(grService.compile(key));
-          return writeTextFn(outputFn(scope));
+          return writeTextFn(el, outputFn(scope));
         };
         onVariablesChanged = function(text) {
           if (grService.language === grService.originalLanguage) {
-            return writeTextFn(text);
+            return writeTextFn(el, text);
           }
           if (!outputFn) {
             throw new Error("outputFn is undefined but it shall not be");
           }
-          return writeTextFn(outputFn(scope));
+          return writeTextFn(el, outputFn(scope));
         };
         onKeyChanged = function(newKey) {
           if (key === newKey) {
@@ -363,7 +374,18 @@
     };
   };
 
-  angular.module('granula').directive('grAttrs', function(grService, $interpolate, $parse) {
+  angular.module('granula').directive('grAttrs', function(grService, $interpolate) {
+    var read, write;
+    read = function(attrName) {
+      return function(el) {
+        return el.attr(attrName);
+      };
+    };
+    write = function(attrName) {
+      return function(el, val) {
+        return el.attr(attrName, val);
+      };
+    };
     return {
       compile: function(el, attrs) {
         var attrNames, linkFunctions;
@@ -376,16 +398,15 @@
             interpolateKey = $interpolate(keyExpr, true);
           }
           startKey = interpolateKey ? null : keyExpr;
-          return processDomText(grService, $interpolate, interpolateKey, startKey, (function() {
-            return el.attr(attrName);
-          }), function(val) {
-            return el.attr(attrName, val);
-          });
+          return {
+            link: processDomText(grService, $interpolate, interpolateKey, startKey, read(attrName), write(attrName), el).link,
+            attrName: attrName
+          };
         });
         return function(scope, el, attrs) {
           var keyListeners;
           return keyListeners = linkFunctions.map(function(l) {
-            return l.link(scope).onKeyChanged;
+            return l.link(scope, el).onKeyChanged;
           });
         };
       }
@@ -393,6 +414,13 @@
   });
 
   angular.module('granula').directive('grKey', function(grService, $interpolate) {
+    var read, write;
+    read = function(el) {
+      return el.html();
+    };
+    write = function(el, val) {
+      return el.html(val);
+    };
     return {
       compile: function(el, attrs) {
         var interpolateKey, keyExpr, link, startKey;
@@ -401,13 +429,9 @@
           interpolateKey = $interpolate(keyExpr, true);
         }
         startKey = interpolateKey ? null : keyExpr;
-        link = processDomText(grService, $interpolate, interpolateKey, startKey, (function() {
-          return el.text();
-        }), (function(val) {
-          return el.text(val);
-        })).link;
+        link = processDomText(grService, $interpolate, interpolateKey, startKey, read, write, el).link;
         return function(scope, el, attrs) {
-          return link(scope, attrs);
+          return link(scope, el);
         };
       }
     };
@@ -527,7 +551,7 @@
   };
 
   pluralizerParser = function(preparePluralizationFn) {
-    var endSymbol, escape, exactVarSpec, nearestRight, plural, separator, startSymbol, wordSeparator;
+    var endSymbol, escape, exactVarSpec, nearestRight, plural, separator, startSymbol, varEnd, wordSeparator;
     if (!preparePluralizationFn) {
       return noParser();
     }
@@ -536,6 +560,7 @@
     escape = "\\";
     separator = ",";
     wordSeparator = /[\s,.!:;'\"-+=*%$#@{}()]/;
+    varEnd = /[\s,!:;'\"-+=*%$#@{}()]/;
     exactVarSpec = ":";
     nearestRight = ">";
     plural = function(word, suffixes, argName) {
@@ -612,7 +637,7 @@
           if (str[end + endSymbol.length] === exactVarSpec) {
             startVar = end + endSymbol.length + 1;
             end = startVar;
-            while (end < str.length && !str[end].match(wordSeparator)) {
+            while (end < str.length && !str[end].match(varEnd)) {
               end++;
             }
             exactVar = str.substring(startVar, end);
@@ -694,6 +719,9 @@
       canTranslate: function(language, key) {
         var _ref1;
         return ((_ref1 = lang[language]) != null ? _ref1[key] : void 0) !== void 0;
+      },
+      canTranslateTo: function(language) {
+        return lang[language] !== void 0;
       },
       compile: function(language, pattern) {
         var p;

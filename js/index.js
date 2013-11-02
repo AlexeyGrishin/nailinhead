@@ -549,18 +549,24 @@
   });
 
   app.controller('login', function($scope, auth, $location) {
-    var onLogReg;
+    var onLogReg, startCall;
     $scope.auth = auth;
     onLogReg = function(user, error) {
       if (user) {
         $location.path("/");
       } else {
         $scope.error = error;
+        error.isLogin = true;
       }
+      $scope.logReg = false;
       return $scope.$apply();
     };
-    $scope.register = function() {
+    startCall = function() {
       $scope.error = null;
+      return $scope.logReg = true;
+    };
+    $scope.register = function() {
+      startCall();
       return auth.register($scope.auth.username, $scope.auth.password, {
         options: {
           currency: "RUR"
@@ -571,7 +577,7 @@
       }, onLogReg);
     };
     return $scope.login = function() {
-      $scope.error = null;
+      startCall();
       return auth.login($scope.auth.username, $scope.auth.password, onLogReg);
     };
   });
@@ -703,6 +709,7 @@
     }
     $scope.loading = true;
     $scope.month = month;
+    $scope.monthR = month + 1;
     $scope.year = year;
     $scope.prev = {
       month: month === 0 ? 11 : month - 1,
@@ -772,7 +779,7 @@
             tasksToShow.pop();
             rest = total - maxAmountOfTasks + 1;
             tasksToShow.push({
-              title: "Show the rest " + rest + " tasks",
+              rest: rest,
               status: "more",
               text: "..."
             });
@@ -801,7 +808,8 @@
     return {
       scope: {
         project: "=projectThumb",
-        selection: "=selection"
+        selection: "=selection",
+        deleteProject: "&deleteProject"
       },
       replace: true,
       templateUrl: "partial/project-thumb.html",
@@ -1506,6 +1514,13 @@
           return this.tasks.splice(0, this.tasks.length);
         };
 
+        Selection.prototype["delete"] = function() {
+          this.tasks.forEach(function(t) {
+            return tasksService.deleteTask(t);
+          });
+          return this.deselectAll();
+        };
+
         Selection.prototype.toggleBookingTask = function() {
           var selectionBooked, tasksToToggle;
           selectionBooked = this.isBooked();
@@ -1864,7 +1879,12 @@
   };
 
   Project = (function() {
-    function Project() {}
+    function Project(data) {
+      angular.copy(data, this);
+      if (!this.tasks) {
+        this.tasks = [];
+      }
+    }
 
     Project.prototype.byStatus = function(status) {
       return this.tasks.filter(function(t) {
@@ -1994,8 +2014,7 @@
             }
             projects.forEach(function(p) {
               var proj;
-              proj = new Project();
-              angular.copy(p, proj);
+              proj = new Project(p);
               proj.tasks = proj.tasks.map(function(t) {
                 return addTask(_this, t.title, t.cost, t.status, t.groups);
               });
@@ -2367,7 +2386,7 @@
 },{"./puzzle/puzzle":7}],14:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
-    var addZeros, getDialog, setVal, toggle;
+    var LANG_KEY, addZeros, getDialog, setVal, toggle;
     setVal = function(scope, name, val) {
       var act;
       act = function() {
@@ -2633,6 +2652,52 @@
           parts.unshift(div > 0 ? addZeros(rem, 3) : rem);
         }
         return parts.join(' ');
+      };
+    });
+    LANG_KEY = 'NIH_language';
+    app.directive('langSelector', function(grService) {
+      return {
+        replace: true,
+        restrict: 'E',
+        templateUrl: 'partial/language-selector.html',
+        link: function(scope, el, attrs) {
+          var _ref;
+          scope.languages = ['en', 'ru'];
+          scope.$on('gr-lang-changed', function(e, lang) {
+            scope.currentLanguage = lang;
+            return localStorage[LANG_KEY] = lang;
+          });
+          scope.currentLanguage = grService.language;
+          scope.changeLanguage = function(lang) {
+            return grService.setLanguage(lang);
+          };
+          return grService.setLanguage((_ref = localStorage[LANG_KEY]) != null ? _ref : grService.language);
+        }
+      };
+    });
+    app.directive('longClick', function() {
+      return {
+        link: function(scope, el, attr) {
+          var processingByOurClick;
+          processingByOurClick = false;
+          el.addClass('long-click');
+          el.click(function() {
+            processingByOurClick = true;
+            el.addClass('processing');
+            return scope.$apply(attr.longClick);
+          });
+          return scope.$watch(attr.processing, function(newVal) {
+            if (newVal) {
+              if (!processingByOurClick) {
+                return el.attr('disabled', 'disabled');
+              }
+            } else {
+              el.removeClass('processing');
+              el.removeAttr('disabled');
+              return processingByOurClick = false;
+            }
+          });
+        }
       };
     });
     return {

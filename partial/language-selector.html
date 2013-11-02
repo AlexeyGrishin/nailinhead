@@ -1,0 +1,8 @@
+<div class="lang-selector">
+    <button data-lang='{{lang}}'
+            ng-repeat='lang in languages'
+            ng-class='{selected: lang == currentLanguage}'
+            ng-click='changeLanguage(lang)'
+            title='Click to switch the language' gr-attrs='title'
+            ></button>
+</div>

@@ -146,6 +146,9 @@ clear = (objs...) ->
       angular.copy {}, obj
 
 class Project
+  constructor: (data) ->
+    angular.copy(data, @)
+    @tasks = [] if not @tasks
   byStatus: (status) -> @tasks.filter (t) -> t.is(status)
   completed: -> @byStatus("completed")
   available: -> @byStatus("available")
@@ -216,8 +219,7 @@ TasksService = (storage = require('./localStorage')) ->
       storage.getProjects (projects, error) =>
         return cb(error) if error
         projects.forEach (p) =>
-          proj = new Project()
-          angular.copy(p, proj)
+          proj = new Project(p)
           proj.tasks = proj.tasks.map (t) => addTask(@, t.title, t.cost, t.status, t.groups)
           @_linkTasksAndGroups proj.tasks
           @projects.push proj

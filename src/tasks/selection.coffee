@@ -17,6 +17,9 @@ module.exports = (app) ->
         @tasks.length > 1 or @tasks[0] != task
       deselectAll: ->
         @tasks.splice(0, @tasks.length)
+      delete: ->
+        @tasks.forEach (t) -> tasksService.deleteTask(t)
+        @deselectAll()
 
       toggleBookingTask: ->
         selectionBooked = @isBooked()

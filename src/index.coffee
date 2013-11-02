@@ -59,15 +59,20 @@ app.controller 'login', ($scope, auth, $location) ->
       $location.path "/"
     else
       $scope.error = error
+      error.isLogin = true
+    $scope.logReg = false
     $scope.$apply()
-  $scope.register = ->
+  startCall = ->
     $scope.error = null
+    $scope.logReg = true
+  $scope.register = ->
+    startCall()
     auth.register $scope.auth.username, $scope.auth.password, {
       options: {currency: "RUR"}
       budget: {amount: 10000}
     }, onLogReg
   $scope.login = ->
-    $scope.error = null
+    startCall()
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
 app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
@@ -169,6 +174,7 @@ app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
 
   $scope.loading = true
   $scope.month = month
+  $scope.monthR = month + 1
   $scope.year = year
   $scope.prev = {
     month: if month == 0 then 11 else month - 1
@@ -214,7 +220,7 @@ app.service 'projectThumbModel', ->
       if (tasksToShow.length < availableTasks.length + unavailableTasks.length)
         tasksToShow.pop()
         rest = total - maxAmountOfTasks + 1
-        tasksToShow.push {title: "Show the rest #{rest} tasks", status: "more", text: "..."}
+        tasksToShow.push {rest: rest, status: "more", text: "..."}
       tasksToShow
     update: ->
       #@tasksToShow.splice.apply(@tasksToShow, [0, @tasksToShow.length].concat(calclateTasksToShow(project)))
@@ -231,6 +237,7 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
     selection: "=selection"
+    deleteProject: "&deleteProject"
   replace: true
   templateUrl: "partial/project-thumb.html"
   link: (scope, el, attrs) ->
@@ -238,8 +245,6 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
     scope.click = (task) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
-      #else
-      #  scope.selection.toggleSelection(task)
     scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
     scope.isSelected = (task) -> scope.selection.isSelected(task)
     scope.$watch("project", (-> scope.thumb.update()), true)

@@ -6,9 +6,6 @@
                 dialog-panel-trigger="addProjectDialog"
                 gr-key
                 >Add new project</button>
-        <button class="btn btn-danger btn-drop-area delete-project" gr-key>
-            Drop to delete
-        </button>
     </div>
 
     <dialog-panel show-if="addProjectDialog"
@@ -36,8 +33,8 @@
         </ul>
     </div>
     <ul class="projects-list clearfix">
-        <li ng-repeat="project in projects"  delete-to="delete-project" on-delete="deleteProject(project)">
-            <div project-thumb="project" selection="selection"></div>
+        <li ng-repeat="project in projects">
+            <div project-thumb="project" selection="selection" delete-project="deleteProject(project)"></div>
         </li>
     </ul>
 </div>

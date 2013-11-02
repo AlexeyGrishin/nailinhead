@@ -12,6 +12,11 @@ a.back {
     .pressed-button();
   }
 }
+@taskRowHeight: 50px;
+@taskActionsWidth: 210px;
+@editButtonWidth: @taskRowHeight * 2/3;
+@interSectionPadding: 10px;
+@rightEdgeOfTitle: @editButtonWidth + @taskActionsWidth + 2*@interSectionPadding;
 
 ul.tasks-list {
   list-style: none;
@@ -20,14 +25,14 @@ ul.tasks-list {
   li {
     //.transition();
     background-color: #eee;
-    min-height: 50px;
+    min-height: @taskRowHeight;
     width: 100%;
     position: relative;
     border-bottom: 1px solid #cccccc;
     > strong {
       display: block;
-      line-height: 50px;
-      margin-right: 100px;
+      line-height: @taskRowHeight;
+      margin-right: @rightEdgeOfTitle;
       font-size: @fontBigger;
       padding-left: 30px;
 
@@ -70,6 +75,25 @@ ul.tasks-list {
     &.available {
     }
 
+    .triangle-btn {
+      position: absolute;
+      right: 0;
+      top: @taskRowHeight - @editButtonWidth;
+      &.edit {
+        .triangle-btn(@editButtonWidth, @defPanelBg, 16px);
+        i {
+          background: url(../img/pencil_white.png) no-repeat center center
+        };
+      }
+      &.delete {
+        .triangle-btn(@editButtonWidth, @redDark, 16px);
+        top: auto;
+        bottom: 0;
+        i {
+          background: url(../img/trash_white.png) no-repeat center center
+        };
+      }
+    }
 
   }
 }
@@ -80,8 +104,8 @@ section.task-actions {
   display: block;
   top: 0;
   bottom: 0;
-  right: 10px;
-  width: 210px;
+  right: @editButtonWidth + @interSectionPadding;
+  width: @taskActionsWidth;
   text-align: right;
   > div
   {

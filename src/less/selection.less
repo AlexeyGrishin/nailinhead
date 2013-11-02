@@ -34,7 +34,7 @@
       cursor: pointer;
       position: absolute;
       left: 0;
-      right: 220px;
+      right: @rightEdgeOfTitle;
 
       &:hover {
         background-image: url(../img/selectionAll0.svg);
@@ -55,6 +55,17 @@
         margin-right: 20px;
       }
 
+    }
+    .triangle-btn {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      &.delete {
+        .triangle-btn(@editButtonWidth, @redDark, 16px);
+        i {
+          background: url(../img/trash_white.png) no-repeat center center
+        };
+      }
     }
   }
 }

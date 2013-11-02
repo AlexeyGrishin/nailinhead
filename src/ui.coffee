@@ -203,6 +203,38 @@ module.exports = (app) ->
         parts.unshift if div > 0 then addZeros(rem, 3) else rem
       parts.join(' ')
 
+  LANG_KEY = 'NIH_language'
+
+  app.directive 'langSelector', (grService) ->
+    replace: true
+    restrict: 'E'
+    templateUrl: 'partial/language-selector.html'
+    link: (scope, el, attrs) ->
+      scope.languages = ['en', 'ru']
+      scope.$on 'gr-lang-changed', (e, lang) ->
+        scope.currentLanguage = lang
+        localStorage[LANG_KEY] = lang
+      scope.currentLanguage = grService.language
+      scope.changeLanguage = (lang) ->
+        grService.setLanguage lang
+      grService.setLanguage localStorage[LANG_KEY] ? grService.language
+
+  #<a long-click='doAction()' processing='processing'>
+  app.directive 'longClick', ->
+    link: (scope, el, attr) ->
+      processingByOurClick = false;
+      el.addClass 'long-click'
+      el.click ->
+        processingByOurClick = true
+        el.addClass('processing')
+        scope.$apply(attr.longClick)
+      scope.$watch attr.processing, (newVal) ->
+        if newVal
+          el.attr('disabled', 'disabled') if not processingByOurClick
+        else
+          el.removeClass('processing')
+          el.removeAttr('disabled')
+          processingByOurClick = false
 
   return {getDialog}
 

@@ -2,7 +2,7 @@
   font-size: @fontBig;
   margin-top: 40px;
   > div {
-    height: 200px;
+    height: 250px;
     float: left;
     margin: 10px;
     box-sizing: border-box;
@@ -15,6 +15,10 @@
       background-color: @grayPanel;
       padding-top: 20px;
       width: 280px;
+      > .lang-selector {
+        float: right;
+        margin-right: 20px;
+      }
       > form {
         background-color: transparent;
         color: black;
@@ -30,6 +34,9 @@
         }
         section.buttons {
           padding-left: 90px;
+          button {
+            margin-bottom: 5px;
+          }
         }
       }
     }

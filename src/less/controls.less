@@ -60,7 +60,6 @@
   &:active {
     .pressed-button();
   }
-
   &.btn-primary {
     .btn-primary();
   }
@@ -84,6 +83,20 @@
       cursor: default;
     }
   }
+  &.long-click {
+    text-indent: 16px;
+  }
+  &.processing {
+    .btn-disabled;
+    white-space: nowrap;
+    background-image: url(../img/loading.gif);
+    background-repeat: no-repeat;
+    background-position: left center;
+  }
+  &[disabled] {
+    .btn-disabled;
+  }
+
 }
 
 button.link {
@@ -202,3 +215,66 @@ input{
   }
 }
 
+p.error {
+  background: @redPanel;
+  color: @redDark;
+  box-shadow: 0 0 2px @redLight;
+  padding: 5px 10px;
+  font-size: @fontBig;
+}
+
+//triangle buttons
+.triangle-btn(@size, @color, @iconSize: 16px) {
+  width: 0;
+  height: 0;
+  border-bottom: @size solid @color;
+  border-left: @size solid transparent;
+  @left: -(@iconSize + 2px);
+  @top: @size - (@iconSize + 2px);
+  cursor: pointer;
+  > i {
+
+    display: block;
+    position: relative;
+    left: @left;
+    top: @top;
+    width: @iconSize;
+    height: @iconSize;
+  }
+  &:hover {
+    width: 1px;
+    > i {
+      left: @left - 1;
+      top: @top + 1;
+    }
+  }
+
+
+}
+
+// lang selector
+.lang-selector {
+  button {
+    width: 18px;
+    height: 13px;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-position: center center;
+    border: 0;
+    opacity: 0.5;
+    &:active {
+      .pressed-button();
+    }
+    &[data-lang=en] {
+      background-image: url('../img/en.png');
+    }
+    &[data-lang=ru] {
+      background-image: url('../img/ru.png');
+    }
+    &.selected {
+      opacity: 1;
+      .box-shadow(0 0 2px @goldDark)
+    }
+
+  }
+}

@@ -12,24 +12,25 @@ module.exports = (grunt) ->
           "public/js/index.js": ["tools/loading.coffee"]
         options:
           bare: true
+      test:
+        files:
+          "public/js/test.js": ["src/model/*.coffee"]
+        options:
+          bare: true
       tests:
         expand: true
         cwd: "tests"
         src: ["**/*.coffee"]
         dest: "tests"
         ext: ".js"
+        options:
+          bare: true
     browserify:
       dev:
         files: 
           'public/js/index.js': ["src/**/*.js"]
         options:
           require: true
-      tests:
-        files:
-          'tests/test_bundle.js': ["public/granula.js","tests/**/*Test.js"]
-        options:
-          external: ["src/**/index.js"]
-
     less:
       dev:
         files:
@@ -50,13 +51,13 @@ module.exports = (grunt) ->
     watch:
       coffee:
         files: ["src/**/*.coffee", "public/**/*.html"]
-        tasks: ["dev"]
+        tasks: ["dev", "test", "unit-tests"]
       styles:
         files: ["src/less/**/*.less"] 
         tasks: ["less"]
-      #tests:
-      #  files: ["src/**/*.coffee", "public/**/*.html", "tests/**/*.coffee"]
-      #  tasks: ["unit-tests"]
+      tests:
+        files: ["tests/**/*.coffee"]
+        tasks: ["unit-tests"]
   }
   grunt.loadNpmTasks 'grunt-contrib-coffee'
   grunt.loadNpmTasks 'grunt-browserify'
@@ -64,7 +65,8 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-karma'
   grunt.registerTask 'dev', ['coffee:building','less', 'coffee', 'browserify']
-  grunt.registerTask 'unit-tests', ['dev', 'coffee:tests', 'browserify:tests', 'karma:runBackground:run']
-  grunt.registerTask 'unit-tests-run', ['dev', 'coffee:tests', 'browserify:tests', 'karma:run']
+  grunt.registerTask 'test', ['coffee:test']
+  grunt.registerTask 'unit-tests', ['dev', 'coffee:tests', 'karma:runBackground:run']
+  grunt.registerTask 'unit-tests-run', ['dev', 'coffee:tests', 'karma:run']
   grunt.registerTask 'default', ['dev']
 

@@ -1,8 +1,14 @@
+
+if window['require']
+  ModelMixin = require('./persistence')
+else
+  ModelMixin = window.ModelMixin
+
 class Group
   constructor: (@name, @budget) ->
 
   include: (task) -> task.groups.indexOf(@name) > -1
-  tasks: -> @budget.tasks.filter (t) => t.completed == 0 and @include(t)
+  tasks: -> @budget.tasks.filter (t) => t.completed == 0 and t.deleted == 0 and @include(t)
   amount: -> @tasks(@budget).map((t) ->t.cost).reduce(((a,b)->a+b), 0)
 
 class Task extends ModelMixin
@@ -135,6 +141,18 @@ class Budget extends ModelMixin
   updateStatuses: (container = @) ->
     container.tasks.forEach (t) =>t.updateStatus()
 
+  addProject: (props, cb = ->) ->
+    props.budget = @
+    project = new Project(props)
+    project.save().then ((project) =>
+      project.budget = @
+      @projects.push(project)
+      cb(null, project)
+    ), (err) -> cb(err)
+
+  deleteProject: (proj) ->
+    @projects.slice @projects.indexOf(proj), 1
+
   addTask: (props, cb = ->) ->
     props.budget = @
     task = new Task(props)
@@ -169,12 +187,15 @@ class Project extends ModelMixin
     props.project = @
     @budget.addTask props, cb
   deleteTask: (task) ->
-    @budget.deleteTask task
+    task.delete()
     @tasks.splice(@tasks.indexOf(task), 1)
+  delete: ->
+    @save {deleted: 0}, {safe: true}
+    @budget.deleteProject @
 
 ModelMixin.parseMixin {Task, Budget, Project}
 
 if (window["module"])
-  module.exports = Budget
+  module.exports = {Budget, remix: (mixin) -> mixin {Task, Budget, Project}}
 else
   window.Budget = Budget

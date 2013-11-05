@@ -263,4 +263,7 @@ ModelMixin.parseMixin = createMixin "persistence", ParseClassMethods(), ParseIns
 ModelMixin.parseReadonlyMixin = createMixin "persistence", ParseClassMethods(), ParseNowriteInstanceMethods()
 ModelMixin.memMixin = createMixin "persistence", MemClassMethods(), MemInstanceMethods()
 
-window.ModelMixin = ModelMixin
+if (window["module"])
+  module.exports = ModelMixin
+else
+  window.ModelMixin = ModelMixin

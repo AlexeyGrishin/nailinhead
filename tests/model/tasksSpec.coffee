@@ -159,4 +159,20 @@ describe 'budget', ->
         expect(b.booked.amount()).toEqual(2)
 
 
+  describe "deletion of task", ->
+
+    it "shall remove task from list of project's tasks", ->
+      prepareBudget(10).withTask(5).andThen (b, task, project) ->
+        ParseUtil.expectSaving "Task", {deleted: increment(1), objectId: task.objectId}
+        project.deleteTask(task)
+        expect(project.tasks.map(values)).toEqual([])
+
+    it "shall remove task from list of group's tasks", ->
+      prepareBudget(10).withGroupedTasks([{cost: 3, group: "booked"}]).andThen (b) ->
+        task = b.tasks[0]
+        expect(b.booked.tasks().map(values)).toEqual(values([task]))
+        ParseUtil.expectSaving "Task", {deleted: increment(1), objectId: task.objectId}
+        task.delete()
+        expect(b.booked.tasks().map(values)).toEqual([])
+
 

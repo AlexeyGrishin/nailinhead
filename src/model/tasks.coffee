@@ -1,5 +1,5 @@
-
-if window['require']
+this.require = false
+if require
   ModelMixin = require('./persistence')
 else
   ModelMixin = window.ModelMixin
@@ -73,8 +73,10 @@ BOOKED = "booked"
 class Budget extends ModelMixin
   @properties "amount", "owner"
   constructor: ({@amount} = {})->
+    Budget.init(@)
     @tasks = []
     @booked = new Group(BOOKED, @)
+    @owner = "@currentUser"
 
   linkRelation: (fieldName) ->
     (obj) =>
@@ -129,7 +131,9 @@ class Budget extends ModelMixin
     report
 
   set: (amount) ->
-    @save {amount: amount}
+    newAmount = parseInt(amount)
+    return if @amount == newAmount
+    @save {amount: newAmount}
     @updateStatuses()
 
   onComplete: (task) ->
@@ -151,7 +155,7 @@ class Budget extends ModelMixin
     ), (err) -> cb(err)
 
   deleteProject: (proj) ->
-    @projects.slice @projects.indexOf(proj), 1
+    @projects.splice @projects.indexOf(proj), 1
 
   addTask: (props, cb = ->) ->
     props.budget = @
@@ -166,13 +170,18 @@ class Budget extends ModelMixin
 
   @load: (cb) ->
     Budget.find {owner: "@currentUser"}, {
-      success: (budgets) -> cb(null, budgets[0])
+      success: (budgets) ->
+        if budgets.length > 0
+          cb(null, budgets[0])
+        else
+          new Budget(amount: 0).save().then ((b) -> cb(null, b)), (err) -> cb(err)
       error: (_, e) -> cb(e)}
 
 class Project extends ModelMixin
   @PARSE_CLASS = "Project2"
-  @properties "name", "deleted"
+  @properties "name", "deleted", "budget"
   constructor: ({@name, @budget} = {}) ->
+    Project.init(@)
     @deleted = 0
     @tasks = []
   attachTask: (task) ->
@@ -183,19 +192,27 @@ class Project extends ModelMixin
     @tasks.filter (t) ->t.status == 'completed'
   nonCompleted: ->
     @tasks.filter (t) ->t.status != 'completed'
+  available: ->
+    @tasks.filter (t) ->t.status == 'available'
+  unavailable: ->
+    @tasks.filter (t) ->t.status == 'unavailable'
   addTask: (props, cb) ->
     props.project = @
     @budget.addTask props, cb
   deleteTask: (task) ->
-    task.delete()
+    p = task.delete()
     @tasks.splice(@tasks.indexOf(task), 1)
+    p
   delete: ->
-    @save {deleted: 0}, {safe: true}
+    p = @save {deleted: 1}, {safe: true}
     @budget.deleteProject @
+    p
 
 ModelMixin.parseMixin {Task, Budget, Project}
 
-if (window["module"])
+if require
   module.exports = {Budget, remix: (mixin) -> mixin {Task, Budget, Project}}
 else
   window.Budget = Budget
+  window.Task = Task
+  window.Project = Project

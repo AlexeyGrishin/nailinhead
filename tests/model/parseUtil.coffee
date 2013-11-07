@@ -66,8 +66,9 @@ ParseUtil =
     expectations.push(e)
     e
 
-  expectCreation: (cls, objectData) ->
-    @expect("POST", "https://api.parse.com/1/classes/#{cls}", objectData).andReturn {objectId: "#{cls}-#{new Date().getTime()}"}
+  expectCreation: (cls, objectData, resultData = {}) ->
+    resultData.objectId ?= "#{cls}-#{new Date().getTime()}"
+    @expect("POST", "https://api.parse.com/1/classes/#{cls}", objectData).andReturn resultData
 
   expectSaving: (cls, objectData, resultData = {}) ->
     resultData.objectId = objectData.objectId

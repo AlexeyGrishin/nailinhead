@@ -13,17 +13,21 @@ require './test'
 (require './tasks/selection')(app)
 (require './tasks/actions')(app)
 (require './auth/auth')(app)
+(require './model/tasks_angular')(app)
 
-app.controller 'global', ($scope, tasksService, backend, auth, $location, $route) ->
+app.controller 'global', ($scope, tasksService, budget, backend, auth, $location, $route) ->
   $scope.loading = true
+  $scope.budget = {amount: 0}
   tasksService.onLoad ->
     $scope.loading = false
   $scope.options = tasksService.options
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->
     console.log "load tasks"
-    tasksService.load (error) ->
+    budget.load (error, budget) ->
       console.error error if error
+      $scope.budget = budget
+      $scope.loading = false
       $scope.$apply()
   $scope.$on 'auth:loginFailed', ->
     $location.path "/auth"
@@ -34,6 +38,12 @@ app.controller 'global', ($scope, tasksService, backend, auth, $location, $route
     $scope.section = route.section
 
 app.controller 'header', ($scope, tasksService) ->
+  #$scope.budget = {amount: 0}
+  $scope.booking = {amount: 0}
+  $scope.$watch 'budget.amount', (newVal) ->
+    return unless $scope.auth.loggedIn
+    $scope.budget.set newVal
+  ###
   $scope.budget = tasksService.budget
   $scope.booking = tasksService.booking
   $scope.$watch 'currency', (newVal) ->
@@ -42,7 +52,7 @@ app.controller 'header', ($scope, tasksService) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
     tasksService.setBudget newVal
-
+  ###
 app.config ($routeProvider) ->
   $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'
   $routeProvider.when '/reports/:year/:month', controller: 'reports', templateUrl: './reports.html', section:'reports'
@@ -75,16 +85,20 @@ app.controller 'login', ($scope, auth, $location) ->
     startCall()
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
-app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
-  $scope.projects = tasksService.projects
-
+app.controller 'projects', ($scope, $location) ->
   $scope.newProject = {title:""}
   $scope.addProject = ->
     if $scope.newProject.title
-      tasksService.addProject $scope.newProject.title, "/img/pic1.jpg", (proj) ->
+      $scope.budget.addProject({name: $scope.newProject.title}).then ->
         $scope.$apply ->
-          $location.path "/#{proj.objectId}"
+          #$location.path "/#{proj.objectId}"
     $scope.$apply()
+  $scope.deleteProject = (project) ->
+    project.delete().then -> $scope.$apply()
+
+  ###
+  $scope.projects = tasksService.projects
+
   $scope.deleteProject = (project) ->
     tasksService.deleteProject project, ->
       $scope.$apply()
@@ -93,6 +107,7 @@ app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
   $scope.selection = tasksSelection.createSelection()
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
+  ###
 
 SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
 app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
@@ -247,7 +262,7 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
         $location.path "/#{scope.project.objectId}"
     scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
     scope.isSelected = (task) -> scope.selection.isSelected(task)
-    scope.$watch("project", (-> scope.thumb.update()), true)
+    #scope.$watch("project", (-> scope.thumb.update()), true)
 
 app.directive 'ngEnter', ->
   (scope, el, attrs) ->

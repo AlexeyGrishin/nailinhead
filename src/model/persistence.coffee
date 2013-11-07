@@ -28,7 +28,8 @@ ParseUtils =
     for name, val of data
       if val == '@currentUser'
         q.equalTo(name, Parse.User.current())
-      q.equalTo(name, val)
+      else
+        q.equalTo(name, val)
     q
 
   afterFind: (items, options, promise) ->
@@ -66,24 +67,33 @@ class BgSaver
     @to = null
 
   save: (obj) ->
-    return if @queue.map(@idGetter).indexOf(@idGetter(obj)) > -1
-    @queue.push obj
+    existentInMap = @queue.filter((q) => @idGetter(q.obj) == @idGetter(obj))[0]
+    if existentInMap
+      console.log "Object already in queue - #{obj.constructor.name}"
+      return existentInMap.promise
+    console.log "Push object to saving queue - #{obj.constructor.name}"
+    promise = new Parse.Promise()
+    @queue.push {obj, promise}
     clearInterval(@to)
     #TODO: promise
-    @to = setInterval @_save.bind(@), @delay
+    @to = setTimeout @_save.bind(@), @delay
+    promise
 
   _save: ->
-    for object in @queue.splice(0, @queue.length)
-      @_saveObject(object)
+    console.log "Time to save queue - #{@queue.length} objects"
+    for {obj, promise} in @queue.splice(0, @queue.length)
+      @_saveObject(obj).then ((res) -> promise.resolve(res)), (err) -> promise.reject(err)
 
   _saveObject: (obj, options) ->
     @saver.save(obj, options)
 
   flush: ->
+    console.log "Flush objects"
     @_save()
 
   saveNow: (obj, options) ->
-    clearInterval(@to)
+    console.log "Save immediately - #{obj.constructor.name}"
+    clearTimeout(@to)
     @_save()
     @_saveObject(obj, options)
 
@@ -95,7 +105,7 @@ parseSaver = ->
     obj.save(null, options)
   flush: ->
 
-parseBgSaver = (options) ->
+parseBgSaver = (options = {}) ->
   options.saver = parseSaver()
   bgSaver = new BgSaver options
   save: (obj, options) ->
@@ -119,6 +129,7 @@ class ModelMixin
         options = {}
 
     options.data = data
+    options.now = true if not @objectId
     @beforeSave()
     promise = new Parse.Promise()
     promise._thenRunCallbacks(options)
@@ -133,10 +144,13 @@ class ModelMixin
 
   load: (data = {}) ->
     for name,val of data
+      continue if @[name] == '@currentUser'   #do not touch special field
+
       if typeof @[name] == 'object' and typeof(val) == 'string'
         #seems like there is object in model and id in data. compare them
         if @[name].objectId == val then continue
       @[name] = val
+
   afterLoad: (cb) ->
     cb()
   beforeSave: ->
@@ -179,6 +193,8 @@ ParseInstanceMethods = (saver = parseSaver()) ->
       for prop in o.getPropertyNames().concat ["objectId"]
         if typeof o[prop] == 'number'
           parseObj.increment prop, o[prop] - (parseObj.get(prop) ? 0)
+        else if o[prop] == '@currentUser'
+          parseObj.set prop, Parse.User.current()
         else
           parseObj.set prop, o[prop]?.objectId ? o[prop]
 
@@ -260,10 +276,12 @@ createMixin = (mixinName, classMethods, instanceMethods) ->
   doMixin
 
 ModelMixin.parseMixin = createMixin "persistence", ParseClassMethods(), ParseInstanceMethods()
+ModelMixin.parseBgMixin = createMixin "persistence", ParseClassMethods(), ParseInstanceMethods(parseBgSaver(delay: 2000))
 ModelMixin.parseReadonlyMixin = createMixin "persistence", ParseClassMethods(), ParseNowriteInstanceMethods()
 ModelMixin.memMixin = createMixin "persistence", MemClassMethods(), MemInstanceMethods()
 
-if (window["module"])
+this.require = false
+if require
   module.exports = ModelMixin
 else
   window.ModelMixin = ModelMixin

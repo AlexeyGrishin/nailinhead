@@ -18,6 +18,42 @@ prepareBudget = (amount) ->
     andThen: (cb) ->
       Budget.load (err, b) -> cb(b, b.tasks[0], b.projects[0])
 
+describe 'task', ->
+  beforeEach ->
+    ParseUtil.stubAjaxRequests()
+
+  afterEach ->
+    ParseUtil.verifyNoMoreExpectations()
+    ParseUtil.unstubAjaxRequests()
+
+  it 'shall be possible to create', ->
+    t = new Task(title: 'a', cost: 3)
+    expect(t.cost).toEqual(3)
+    expect(t.deleted).toEqual(0)
+
+  it 'shall be possible to save', ->
+    ParseUtil.expectCreation("Task", {title: 'a', cost: increment(3)})
+    t = new Task(title: 'a', cost: 3)
+    t.save()
+
+describe 'project', ->
+  beforeEach ->
+    ParseUtil.stubAjaxRequests()
+
+  afterEach ->
+    ParseUtil.verifyNoMoreExpectations()
+    ParseUtil.unstubAjaxRequests()
+
+  it 'shall be possible to create', ->
+    p = new Project(name: 'a')
+    expect(p.deleted).toEqual(0)
+
+  it 'shall be possible to save', ->
+    ParseUtil.expectCreation("Project2", {name: 'a'})
+    p = new Project(name: 'a')
+    p.save()
+
+
 describe 'budget', ->
 
   beforeEach ->
@@ -28,8 +64,16 @@ describe 'budget', ->
     ParseUtil.unstubAjaxRequests()
 
   it 'shall be possible to create', ->
-    b = new Budget amount: 3
+    b = new Budget(amount: 3)
     expect(b.amount).toEqual(3)
+
+  describe "when there is no budget created for this user", ->
+    it "shall create it on load", ->
+      ParseUtil.expectSearch("Budget", [])
+      ParseUtil.expectCreation("Budget", {amount: increment(0)}, {objectId: "b1", amount: 0})
+      Budget.load (err, b) ->
+        expect(err).toBeNull()
+        expect(b.objectId).toEqual("b1")
 
   describe "when loading first time", ->
     beforeEach ->
@@ -131,6 +175,13 @@ describe 'budget', ->
           expect(task.budget).toBe(b)
           expect(task.status).toEqual("available")
 
+  describe 'add project', ->
+    it 'shall create project with link to budget', ->
+      prepareBudget(10).withTask(3).andThen (b) ->
+        ParseUtil.expectCreation("Project2", {name: "a", budget: b.objectId})
+        b.addProject {name: "a"}, (err, res) ->
+          expect(err).toBeNull()
+          expect(res.budget).toBe(b)
 
 
   describe "group 'booked'", ->

@@ -1,5 +1,4 @@
 #for tests
-return if (!window['require'])
 {Budget, remix} = require('./tasks')
 ModelMixin = require('./persistence')
 
@@ -7,6 +6,7 @@ module.exports = (app) ->
 
   app.provider 'budget', ->
     mode = 'production'
+    remix(ModelMixin.parseBgMixin)
     setMode: (_mode) ->
       mode = _mode
       if mode == 'debug'

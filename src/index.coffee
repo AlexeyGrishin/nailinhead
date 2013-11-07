@@ -33,6 +33,24 @@ app.controller 'global', ($scope, tasksService, backend, auth, $location, $route
   $scope.$on '$routeChangeSuccess', (ev, route) ->
     $scope.section = route.section
 
+  $scope.export = ->
+    budget = {
+      amount: tasksService.budget.amount,
+      projects: tasksService.projects.map (p) -> {name: p.name, deleted: 0}
+      tasks: []
+    }
+    for proj in tasksService.projects
+      for task in proj.tasks
+        t = {title: task.title, cost: task.cost, groups: task.groups, amount: 1, completed: (if task.status == 'completed' then 1 else 0), deleted: 0, project: proj.name}
+        if t.completed
+          date = t.completedDate ? t.completionDate ? new Date()
+          t.cMonth = date.getMonth()
+          t.cYear = date.getFullYear()
+          t.cProjectName = proj.name
+        budget.tasks.push t
+    console.log JSON.stringify(budget, null, 4)
+
+
 app.controller 'header', ($scope, tasksService) ->
   $scope.budget = tasksService.budget
   $scope.booking = tasksService.booking

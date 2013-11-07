@@ -144,7 +144,7 @@ module.exports = (app) ->
 
 
   app.directive 'currency', ->
-    template: "<span class='currency'>{{options.currency}}</span>"
+    template: "<span class='currency'>{{budget.currency}}</span>"
     restrict: 'E'
 
 

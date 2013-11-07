@@ -1,3 +1,12 @@
+values = (o) ->
+  return o.map(values) if o.length isnt undefined
+  v = {}
+  for own name, val of o
+    continue if typeof val == 'function'
+    v[name] = val?.objectId ? val
+  v
+
+
 prepareBudget = (amount) ->
   withCompletedTask: (cost) ->
     @withTask cost, 1
@@ -141,25 +150,27 @@ describe 'budget', ->
 
   it "shall decrease when task is completed", ->
     prepareBudget(10).withTask(3).andThen (b, task) ->
+      ParseUtil.expectSaving("Budget", {objectId: b.objectId, amount: increment(-3)}, {})
       ParseUtil.expectSaving("Task", {objectId: task.objectId, completed: increment(1)}, {completed: 1})
       ParseUtil.expectSaving("Task", {objectId: task.objectId}, {})
-      ParseUtil.expectSaving("Budget", {objectId: b.objectId, amount: increment(-3)}, {})
       task.complete()
       expect(task.status).toEqual('completed')
       expect(b.amount).toEqual(7)
 
   it "shall increase budget back when task is uncompleted", ->
     prepareBudget(10).withCompletedTask(5).andThen (b, task) ->
-      ParseUtil.expectSaving("Task", {objectId: task.objectId, completed: increment(-1)}, {completed: 0})
       ParseUtil.expectSaving("Budget", {objectId: b.objectId, amount:increment(+5)}, {})
+      ParseUtil.expectSaving("Task", {objectId: task.objectId, completed: increment(-1)}, {completed: 0})
       task.uncomplete()
       expect(task.status).toEqual('available')
       expect(b.amount).toEqual(15)
 
   it "shall NOT change budget if completion does not match", ->
     prepareBudget(10).withTask(5).andThen (b, task) ->
+      ParseUtil.expectSaving("Budget", {objectId: b.objectId, amount:increment(-5)}, {})
       ParseUtil.expectSaving("Task", {objectId: task.objectId, completed: increment(+1)}, {completed: 2})
       ParseUtil.expectSaving("Task", {objectId: task.objectId, completed: increment(-1)}, {completed: 1})
+      ParseUtil.expectSaving("Budget", {objectId: b.objectId, amount:increment(+5)}, {})
       task.complete()
       expect(b.amount).toEqual(10)
       expect(task.status).toEqual("completed")
@@ -169,11 +180,28 @@ describe 'budget', ->
     it "shall create task on server with links to budget and project", (done)->
       prepareBudget(10).withTask(4).andThen (b, task, project) ->
         ParseUtil.expectCreation("Task", {title: "test", cost: increment(4), budget: b.objectId, project: project.objectId, completed: increment(0), deleted: increment(0)})
-        project.addTask {title: "test", cost: 4}, (err, task) ->
+        o = {title: "test", cost: 4}
+        project.addTask o, (err, task) ->
           expect(err).toBeNull()
           expect(task.project).toBe(project)
           expect(task.budget).toBe(b)
           expect(task.status).toEqual("available")
+
+    it "shall not change provided object with properties", ->
+      prepareBudget(10).withTask(4).andThen (b, task, project) ->
+        ParseUtil.expectCreation("Task")
+        o = {title: "test", cost: 4}
+        project.addTask o, (err, task) ->
+          expect(o).toEqual({title: "test", cost: 4})
+
+    it "shall appear in list of project tasks immediately", ->
+      prepareBudget(10).withTask(4).andThen (b, task, project) ->
+        ParseUtil.expectCreation("Task")
+        project.addTask {title: "%%%", cost: 4}
+        expect(project.tasks.length).toEqual(2)
+        expect(project.tasks[1].title).toEqual("%%%")
+
+
 
   describe 'add project', ->
     it 'shall create project with link to budget', ->
@@ -185,14 +213,6 @@ describe 'budget', ->
 
 
   describe "group 'booked'", ->
-
-    values = (o) ->
-      return o.map(values) if o.length isnt undefined
-      v = {}
-      for own name, val of o
-        continue if typeof val == 'function'
-        v[name] = val?.objectId ? val
-      v
 
     it "shall have zero amount if no tasks inside it", ->
       prepareBudget(10).withGroupedTasks([{cost: 3}, {cost: 2}]).andThen (b) ->
@@ -208,6 +228,18 @@ describe 'budget', ->
       prepareBudget(10).withGroupedTasks([{cost: 3, group: 'booked', completed: 1}, {cost: 2, group: 'booked'}]).andThen (b) ->
         expect(b.booked.tasks().map(values)).toEqual(values([b.tasks[1]]))
         expect(b.booked.amount()).toEqual(2)
+
+    it "shall toggle task inclusion", ->
+      prepareBudget(10).withGroupedTasks([{cost: 3, group: 'booked'}]).andThen (b) ->
+        booking = b.booked
+        task = b.tasks[0]
+        ParseUtil.expectSaving("Task", {objectId: task.objectId, groups: []})
+        ParseUtil.expectSaving("Task", {objectId: task.objectId, groups: ["booked"]})
+        expect(booking.include(task)).toBe(true)
+        booking.toggle(task)
+        expect(booking.include(task)).toBeFalsy()
+        booking.toggle(task)
+        expect(booking.include(task)).toBe(true)
 
 
   describe "deletion of task", ->

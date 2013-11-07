@@ -31,7 +31,7 @@
         <strong ng-dblclick="editTask(task)" select-to='selection' select='task' select-with='ctrl-click'>
             {{task.title}}
         </strong>
-        <task-actions-list task="task"></task-actions-list>
+        <task-actions-list task="task" booking="booking"></task-actions-list>
         <div class="triangle-btn edit" ng-click="editTask(task)" title="Click to edit or delete the task" gr-attrs="title"><i></i></div>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"

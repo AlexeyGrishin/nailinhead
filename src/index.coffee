@@ -1,11 +1,5 @@
-createTasksService = require './tasks/tasks'
-
 app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
-app.service 'tasksService', (backend) ->
-  tasksService = createTasksService backend
-  backend.init()
-  tasksService
 
 require './test'
 {getDialog} = (require './ui')(app)
@@ -15,44 +9,41 @@ require './test'
 (require './auth/auth')(app)
 (require './model/tasks_angular')(app)
 
-app.controller 'global', ($scope, tasksService, budget, backend, auth, $location, $route) ->
+app.config (budgetProvider) ->
+  #budgetProvider.setMode 'debug'
+  #budgetProvider.setMode 'local'
+
+app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
   $scope.loading = true
-  $scope.budget = {amount: 0}
-  tasksService.onLoad ->
-    $scope.loading = false
-  $scope.options = tasksService.options
+  reset = ->
+    $scope.budget = {amount: 0}
+    $scope.booking = {amount: ->0}
+  reset()
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->
     console.log "load tasks"
-    budget.load (error, budget) ->
-      console.error error if error
+    budget.load().then ((budget) ->
       $scope.budget = budget
+      $scope.booking = budget.booked
       $scope.loading = false
       $scope.$apply()
+    ), (error) ->
+      console.error error if error
   $scope.$on 'auth:loginFailed', ->
     $location.path "/auth"
   $scope.logout = ->
+    reset()
+    budget.unload()
     auth.logout(->)
   auth.check()
   $scope.$on '$routeChangeSuccess', (ev, route) ->
     $scope.section = route.section
 
-app.controller 'header', ($scope, tasksService) ->
-  #$scope.budget = {amount: 0}
-  $scope.booking = {amount: 0}
+app.controller 'header', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
     $scope.budget.set newVal
-  ###
-  $scope.budget = tasksService.budget
-  $scope.booking = tasksService.booking
-  $scope.$watch 'currency', (newVal) ->
-    return unless $scope.auth.loggedIn
-    tasksService.setCurrency(newVal) if newVal
-  $scope.$watch 'budget.amount', (newVal) ->
-    return unless $scope.auth.loggedIn
-    tasksService.setBudget newVal
-  ###
+
 app.config ($routeProvider) ->
   $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'
   $routeProvider.when '/reports/:year/:month', controller: 'reports', templateUrl: './reports.html', section:'reports'
@@ -77,71 +68,61 @@ app.controller 'login', ($scope, auth, $location) ->
     $scope.logReg = true
   $scope.register = ->
     startCall()
-    auth.register $scope.auth.username, $scope.auth.password, {
-      options: {currency: "RUR"}
-      budget: {amount: 10000}
-    }, onLogReg
+    auth.register $scope.auth.username, $scope.auth.password, {}, onLogReg
   $scope.login = ->
     startCall()
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
-app.controller 'projects', ($scope, $location) ->
+app.controller 'projects', ($scope, $location, tasksSelection) ->
   $scope.newProject = {title:""}
   $scope.addProject = ->
     if $scope.newProject.title
-      $scope.budget.addProject({name: $scope.newProject.title}).then ->
+      $scope.budget.addProject {name: $scope.newProject.title}, (err, proj)->
         $scope.$apply ->
-          #$location.path "/#{proj.objectId}"
+          $location.path "/#{proj.objectId}"
     $scope.$apply()
   $scope.deleteProject = (project) ->
-    project.delete().then -> $scope.$apply()
-
-  ###
-  $scope.projects = tasksService.projects
-
-  $scope.deleteProject = (project) ->
-    tasksService.deleteProject project, ->
-      $scope.$apply()
+    project.delete()
 
   # selection
   $scope.selection = tasksSelection.createSelection()
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
-  ###
+
 
 SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
-app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
+safeApply = ($scope)->
+  $scope.$apply() if not $scope.$$phase
+app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
 
   $scope.showCompleted = localStorage?[SHOW_COMPLETED_KEY] == 'true'
   $scope.$watch 'showCompleted', ->
     localStorage?[SHOW_COMPLETED_KEY] = $scope.showCompleted
 
   projectId = $routeParams.project
-  tasksService.onLoad ->
-    tasksService.selectProject(projectId)
-    tasksService.updateStatus()
-    $scope.project = tasksService.project
+  budget.whenLoad().then (budget) ->
+    $scope.project = budget.getProject(projectId)
     visibleTasks = if $scope.showCompleted then $scope.project.tasks else $scope.project.nonCompleted()
     if (visibleTasks.length == 0)
       $scope.addTaskDialog = true
-    $scope.$apply() if not $scope.$$phase
+    safeApply($scope)
 
   $scope.currentTask = {}
-  $scope.newTask = {title: ""}
+  $scope.newTask = {title: "", cost: 0}
   $scope.addTask = ->
-    tasksService.addTask $scope.newTask.title, $scope.newTask.cost if $scope.newTask.title
+    $scope.project.addTask($scope.newTask, -> safeApply($scope)) if $scope.newTask.title
     setTimeout (->
       $scope.addTaskDialog = true
       $scope.$apply()
     ), 0
   $scope.deleteTask = (task) ->
-    tasksService.deleteTask task
+    $scope.project.deleteTask task
   $scope.toggleTask = (task) ->
-    tasksService.toggle(task)
+    task.toggle().then -> safeApply($scope)
   $scope.isBooked = (task) ->
-    tasksService.isBooked(task)
+    $scope.booking.include(task)
   $scope.toggleBookingTask = (task) ->
-    tasksService.toggleBooking(task)
+    $scope.booking.toggle(task)
 
   # editing
   $scope.taskInEdit = null
@@ -158,9 +139,10 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
   $scope.cancelEdit = ->
     $scope.taskInEdit = null
   $scope.saveTask = (task) ->
-    task.title = $scope.taskInEdit.edited.title
-    task.updateCost($scope.taskInEdit.edited.cost)
-    tasksService.saveTask(task)
+    task.withStatusUpdate (task) ->
+      task.title = $scope.taskInEdit.edited.title
+      task.cost = $scope.taskInEdit.edited.cost
+    task.save()
     $scope.cancelEdit()
   $scope.isInEdit = (task) ->
     $scope.taskInEdit?.original is task
@@ -171,7 +153,7 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
 
-app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
+app.controller 'reports', (budget, $scope, $routeParams, $location) ->
   year = parseFloat($routeParams.year)
   month = parseFloat($routeParams.month)
   month = 0 if not isNaN(year) and isNaN(month)
@@ -200,12 +182,11 @@ app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
     year: if month == 11 then year + 1 else year
   }
   $scope.hasNext = true
-  tasksService.getReport date, (err, report) ->
-    $scope.loading = false
+  $scope.report = {loading: true}
+  budget.whenLoad().then (budget) ->
+    $scope.report = budget.report($scope.month, $scope.year)
     $scope.hasNext = (year < today.getFullYear() || month < today.getMonth())
-    $scope.report = report
-    $scope.$apply()
-  #tbd
+    safeApply($scope)
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->
@@ -248,11 +229,12 @@ app.service 'projectThumbModel', ->
 
 
 
-app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
+app.directive 'projectThumb', (projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
     selection: "=selection"
     deleteProject: "&deleteProject"
+    isBooked: "&isBooked"
   replace: true
   templateUrl: "partial/project-thumb.html"
   link: (scope, el, attrs) ->
@@ -260,9 +242,7 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
     scope.click = (task) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
-    scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
     scope.isSelected = (task) -> scope.selection.isSelected(task)
-    #scope.$watch("project", (-> scope.thumb.update()), true)
 
 app.directive 'ngEnter', ->
   (scope, el, attrs) ->

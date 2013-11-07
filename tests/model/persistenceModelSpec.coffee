@@ -8,7 +8,12 @@ class Linker extends ModelMixin
   constructor: ({@b})->
     Linker.init(@)
 
-ModelMixin.parseMixin {Something, Linker}
+class LinkerBackReference extends ModelMixin
+  @properties "linker"
+  constructor: ->
+    LinkerBackReference.init(@)
+
+ModelMixin.parseMixin {Something, Linker, LinkerBackReference}
 
 {increment} = ParseUtil
 
@@ -97,6 +102,21 @@ describe 'persistence model', ->
       afterLoads[1]()
       expect(success).toHaveBeenCalled()
 
+  describe "if objects two-way linked", ->
+    l = null
+    lb = null
+    beforeEach ->
+      l = new Linker {b:1}
+      lb = new LinkerBackReference()
+
+    it "shall save both only once", ->
+      ParseUtil.expectCreation("Linker")
+      l.save()
+      l.something = lb
+      lb.linker = l
+      ParseUtil.expectCreation("LinkerBackReference", {linker: l.objectId})
+      lb.save()
+
   describe "if uses link to another object", ->
     s = null
     l = null
@@ -135,7 +155,7 @@ describe 'parseReadonly', ->
 
   ok = err = null
   beforeEach ->
-    ModelMixin.parseReadonlyMixin {Something}
+    ModelMixin.parseReadonlyMixin {Something, Linker, LinkerBackReference}
     ParseUtil.stubAjaxRequests()
     ok = jasmine.createSpy()
     err = jasmine.createSpy()
@@ -157,12 +177,34 @@ describe 'parseReadonly', ->
     expect(err).not.toHaveBeenCalled()
     expect(ok).toHaveBeenCalled()
 
+  it "shall process linked objects without error", ->
+    l = new Linker {b: 4}
+    s = new Something {a: 1}
+    l.something = s
+    s.save().then ok, err
+    l.save().then ok, err
+    expect(err).not.toHaveBeenCalled()
+    expect(ok).toHaveBeenCalled()
+
+  it "shall process two-way linked objects without error", ->
+    l = new Linker {b:4}
+    l2 = new LinkerBackReference()
+    l.save().then ok, err
+    l.something = l2
+    l2.linker = l
+    l2.save().then ok, err
+    expect(err).not.toHaveBeenCalled()
+    expect(ok).toHaveBeenCalled()
+
 
 
 describe 'memoryPersistence', ->
 
+  ok = err = null
   beforeEach ->
-    ModelMixin.memMixin {Something, Linker}
+    ModelMixin.memMixin {Something, Linker, LinkerBackReference}
+    ok = jasmine.createSpy()
+    err = jasmine.createSpy()
 
   it "shall allow to create and save", ->
     s = new Something {a: 3}
@@ -192,3 +234,20 @@ describe 'memoryPersistence', ->
       expect(objects.map(values)).toEqual([])
     ), (err) ->
       expect(err).toBeNull()
+
+  it "shall process linked objects without error", ->
+    l = new Linker {b: 4}
+    s = new Something {a: 1}
+    l.something = s
+    l.save().then ok, err
+    expect(err).not.toHaveBeenCalled()
+    expect(ok).toHaveBeenCalled()
+
+  it "shall process two-way linked objects without error", ->
+    l = new Linker {b:4}
+    l2 = new LinkerBackReference()
+    l.something = l2
+    l2.linker = l
+    l.save().then ok, err
+    expect(err).not.toHaveBeenCalled()
+    expect(ok).toHaveBeenCalled()

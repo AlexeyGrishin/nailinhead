@@ -61,7 +61,7 @@ ParseUtils =
 class BgSaver
   constructor: (options = {}) ->
     @delay = options.delay ? 1000
-    @idGetter = options.idGetter ? (obj) -> obj.objectId
+    @idGetter = options.idGetter ? (obj) -> obj.id
     @saver = options.saver
     @queue = []
     @to = null
@@ -69,20 +69,21 @@ class BgSaver
   save: (obj) ->
     existentInMap = @queue.filter((q) => @idGetter(q.obj) == @idGetter(obj))[0]
     if existentInMap
-      console.log "Object already in queue - #{obj.constructor.name}"
+      console.log "Object already in queue - #{@idGetter(obj)} == #{@idGetter(existentInMap.obj)}"
       return existentInMap.promise
-    console.log "Push object to saving queue - #{obj.constructor.name}"
+    console.log "Push object to saving queue - #{@idGetter(obj)}"
     promise = new Parse.Promise()
     @queue.push {obj, promise}
     clearInterval(@to)
-    #TODO: promise
     @to = setTimeout @_save.bind(@), @delay
     promise
 
   _save: ->
     console.log "Time to save queue - #{@queue.length} objects"
-    for {obj, promise} in @queue.splice(0, @queue.length)
-      @_saveObject(obj).then ((res) -> promise.resolve(res)), (err) -> promise.reject(err)
+    for o in @queue.splice(0, @queue.length)
+      (({obj, promise}) =>
+        @_saveObject(obj).then ((res) -> promise.resolve(res)), (err) -> promise.reject(err)
+      )(o)
 
   _saveObject: (obj, options) ->
     @saver.save(obj, options)
@@ -149,6 +150,9 @@ class ModelMixin
       if typeof @[name] == 'object' and typeof(val) == 'string'
         #seems like there is object in model and id in data. compare them
         if @[name].objectId == val then continue
+      if @[name] isnt undefined and val is undefined
+        console.error "Local value is defined, but value from server is undefined: obj == #{@constructor.name}[#{@objectId}], prop == #{name}, oldVal = #{@[name]}"
+        val = @[name]
       @[name] = val
 
   afterLoad: (cb) ->
@@ -185,19 +189,22 @@ ParseClassMethods = (options = {linkToCurrentUser:true})->
       addInstanceMethods(obj, parseObj)
 
 
+parseSetAll = (parseObj, o, data) ->
+  if data
+    o[key] = val for key,val of data
+  for prop in o.getPropertyNames().concat ["objectId"]
+    if typeof o[prop] == 'number'
+      parseObj.increment prop, o[prop] - (parseObj.get(prop) ? 0)
+    else if o[prop] == '@currentUser'
+      parseObj.set prop, Parse.User.current()
+    else if o[prop] instanceof ModelMixin
+      throw new Error("Refered object #{prop} shall be saved first") if not o[prop].objectId
+      parseObj.set prop, o[prop].objectId
+    else
+      parseObj.set prop, o[prop]
+
 ParseInstanceMethods = (saver = parseSaver()) ->
   (parseObj) ->
-    setAll = (o, data) ->
-      if data
-        o[key] = val for key,val of data
-      for prop in o.getPropertyNames().concat ["objectId"]
-        if typeof o[prop] == 'number'
-          parseObj.increment prop, o[prop] - (parseObj.get(prop) ? 0)
-        else if o[prop] == '@currentUser'
-          parseObj.set prop, Parse.User.current()
-        else
-          parseObj.set prop, o[prop]?.objectId ? o[prop]
-
     save: (o, options) ->
       saverMethod = if options.now then 'saveNow' else 'save'
       if options.safe
@@ -206,7 +213,7 @@ ParseInstanceMethods = (saver = parseSaver()) ->
         saver.flush()
         p = ParseUtils.setSafe parseObj, key, options.data[key], options.success, options.error
       else
-        setAll(o, options.data)
+        parseSetAll(parseObj, o, options.data)
         p = saver[saverMethod](parseObj, options)
       p2 = new Parse.Promise()
       p.then ((res) -> p2.resolve(res.toJSON())), (error) -> p2.reject(error)
@@ -216,14 +223,11 @@ ParseInstanceMethods = (saver = parseSaver()) ->
 
 ParseNowriteInstanceMethods = ->
   (parseObj) ->
-    setAll = (o, data) ->
-      if data
-        o[key] = val for key,val of data
-      for prop in o.getPropertyNames()
-        parseObj.set prop, o[prop]
-
+    id = 1
     save: (o, options) ->
-      setAll(o, options.data)
+      o.objectId = "#{o.constructor.name}-#{id++}" if not o.objectId
+      parseSetAll(parseObj, o, options.data)
+      console.log "Save #{o.constructor.name} / #{o.objectId}"
       p = new Parse.Promise()
       p._thenRunCallbacks(options)
       p.resolve(o)

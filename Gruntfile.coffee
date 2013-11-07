@@ -51,7 +51,7 @@ module.exports = (grunt) ->
     watch:
       coffee:
         files: ["src/**/*.coffee", "public/**/*.html"]
-        tasks: ["dev", "test", "unit-tests"]
+        tasks: ["dev", "unit-tests"]
       styles:
         files: ["src/less/**/*.less"] 
         tasks: ["less"]
@@ -66,7 +66,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-karma'
   grunt.registerTask 'dev', ['coffee:building','less', 'coffee', 'browserify']
   grunt.registerTask 'test', ['coffee:test']
-  grunt.registerTask 'unit-tests', ['dev', 'coffee:tests', 'karma:runBackground:run']
+  grunt.registerTask 'unit-tests', ['coffee:tests', 'karma:runBackground:run']
   grunt.registerTask 'unit-tests-run', ['dev', 'coffee:tests', 'karma:run']
   grunt.registerTask 'default', ['dev']
 

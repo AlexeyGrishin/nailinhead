@@ -4,12 +4,25 @@ if require
 else
   ModelMixin = window.ModelMixin
 
+
+copy = (props) ->
+  o = {}
+  for own key,val of props
+    o[key] = val
+  o
+
 class Group
   constructor: (@name, @budget) ->
 
   include: (task) -> task.groups.indexOf(@name) > -1
   tasks: -> @budget.tasks.filter (t) => t.completed == 0 and t.deleted == 0 and @include(t)
   amount: -> @tasks(@budget).map((t) ->t.cost).reduce(((a,b)->a+b), 0)
+  toggle: (task) ->
+    if @include(task)
+      task.groups.splice(task.groups.indexOf(@name), 1)
+    else
+      task.groups.push(@name)
+    task.save()
 
 class Task extends ModelMixin
   @properties "title", "completed", "deleted", "cMonth", "cYear", "cProjectName", "project", "cost", "budget", "groups", "amount"
@@ -19,9 +32,11 @@ class Task extends ModelMixin
     @deleted = 0
     @completed = 0
     @afterLoad()
-  afterLoad: (cb = ->) ->
+  _checkCost: ->
     @cost = parseInt(@cost)
     @cost = 0 if isNaN(@cost)
+  afterLoad: (cb = ->) ->
+    @_checkCost()
     @groups ?= []
     @updateStatus()
     cb()
@@ -32,38 +47,46 @@ class Task extends ModelMixin
     cb(@)
     @updateStatus()
   updateStatus: ->
+    @_checkCost()
     if @completed == 1
       @status = 'completed'
     else
       @withBudget (b) =>
-        @status = if b.isEnough(@) then 'available' else 'unavailable'
+        @status = b.getStatusForCost(@cost)
   toggle: ->
     if @completed == 1
       @uncomplete()
     else
       @complete()
+  is: (status) -> status == @status
   complete: ->
     return if @completed == 1
+    p = new Parse.Promise()
+    @withBudget (b)=> b.onComplete(@)
     @save {completed: 1}, {
       safe: true,
       success: =>
         comDate = new Date()
-        @save {cMonth: comDate.getMonth(), cYear: comDate.getFullYear()}
-        @withBudget (b)=> b.onComplete(@)
+        @save {cMonth: comDate.getMonth(), cYear: comDate.getFullYear(), cProjectName: @project.name}
       error: (err) =>
-        @updateStatus() if err.conflict
+        if err.conflict
+          @withBudget (b)=> b.onUncomplete(@)
         #error
     }
+    @updateStatus()
+    p
   uncomplete: ->
     return if @completed == 0
-    @save {completed: 0}, {
+    @withBudget (b) => b.onUncomplete(@)
+    p = @save {completed: 0}, {
       safe: true,
       success: =>
-        @withBudget (b) => b.onUncomplete(@)
+        #that's ok
       error: (err) =>
-        @updateStatus() if err.conflict
-
+        @withBudget (b) => b.onComplete(@) if err.conflict
     }
+    @updateStatus()
+    p
   delete: ->
     @save {deleted: 1}, {
       safe: true
@@ -71,7 +94,7 @@ class Task extends ModelMixin
 BOOKED = "booked"
 
 class Budget extends ModelMixin
-  @properties "amount", "owner"
+  @properties "amount", "owner", "currency"
   constructor: ({@amount} = {})->
     Budget.init(@)
     @tasks = []
@@ -83,6 +106,7 @@ class Budget extends ModelMixin
       obj[fieldName] = (act) => act(@)
 
   afterLoad: (cb) ->
+    @currency ?= 'RUR'
     Task.find({budget: @objectId, deleted: 0}, {
       success: (tasks) =>
         tasks.forEach (t) =>
@@ -119,6 +143,10 @@ class Budget extends ModelMixin
   isEnough: (task) ->
     task.cost <= @amount
 
+  getStatusForCost: (cost) ->
+    if @isEnough({cost}) then 'available' else 'unavailable'
+
+
   report: (month, year) ->
     report = {loading:true, tasks: []}
     Task.find {budget: @objectId, completed: 1, cMonth:month, cYear: year}, {
@@ -130,10 +158,12 @@ class Budget extends ModelMixin
     }
     report
 
-  set: (amount) ->
+  set: (amount, force = false) ->
     newAmount = parseInt(amount)
+    if @amount is undefined
+      @amount = amount
     return if @amount == newAmount
-    @save {amount: newAmount}
+    @save {amount: newAmount}, {now: force}
     @updateStatuses()
 
   onComplete: (task) ->
@@ -146,6 +176,7 @@ class Budget extends ModelMixin
     container.tasks.forEach (t) =>t.updateStatus()
 
   addProject: (props, cb = ->) ->
+    props = copy(props)
     props.budget = @
     project = new Project(props)
     project.save().then ((project) =>
@@ -154,15 +185,19 @@ class Budget extends ModelMixin
       cb(null, project)
     ), (err) -> cb(err)
 
+  getProject: (id) -> @projects.filter((p) -> p.objectId == id)[0] ? null
+
   deleteProject: (proj) ->
     @projects.splice @projects.indexOf(proj), 1
 
   addTask: (props, cb = ->) ->
+    props = copy(props)
     props.budget = @
     task = new Task(props)
+    @tasks.push(task)
+    task.project.tasks.push(task)
     task.save().then ((task) =>
       @linkRelation("withBudget")(task)
-      @tasks.push(task)
       @updateStatuses(props.updateStatusesFor)
       cb(null, task)
     ), (err) ->
@@ -197,6 +232,7 @@ class Project extends ModelMixin
   unavailable: ->
     @tasks.filter (t) ->t.status == 'unavailable'
   addTask: (props, cb) ->
+    props = copy(props)
     props.project = @
     @budget.addTask props, cb
   deleteTask: (task) ->

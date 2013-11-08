@@ -227,7 +227,7 @@ ParseNowriteInstanceMethods = ->
     save: (o, options) ->
       o.objectId = "#{o.constructor.name}-#{id++}" if not o.objectId
       parseSetAll(parseObj, o, options.data)
-      console.log "Save #{o.constructor.name} / #{o.objectId}"
+      console.log "Save #{o.constructor.name} / #{o.objectId} = #{JSON.stringify(parseObj.attributes)}"
       p = new Parse.Promise()
       p._thenRunCallbacks(options)
       p.resolve(o)

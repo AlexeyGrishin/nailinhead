@@ -32,6 +32,7 @@ body {
 
 .main-content {
   padding-top: @topHeaderHeight + 2*@topHeaderPadding + 5;
+  padding-bottom: @footerHeight;
   position: relative;
   .limited-width();
   .top-panel {
@@ -125,8 +126,8 @@ body {
 .footer {
   position: fixed;
   .drop-shadow(0, -2px, 4px, 0.2);
-  height: 30px;
-  line-height: 30px;
+  height: @footerHeight;
+  line-height: @footerHeight;
   bottom: 0;
   left: 0;
   right: 0;

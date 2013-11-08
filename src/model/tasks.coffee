@@ -14,7 +14,7 @@ copy = (props) ->
 class Group
   constructor: (@name, @budget) ->
 
-  include: (task) -> task.groups.indexOf(@name) > -1
+  include: (task) -> task.groups? && task.groups.indexOf(@name) > -1
   tasks: -> @budget.tasks.filter (t) => t.completed == 0 and t.deleted == 0 and @include(t)
   amount: -> @tasks(@budget).map((t) ->t.cost).reduce(((a,b)->a+b), 0)
   toggle: (task) ->
@@ -35,8 +35,11 @@ class Task extends ModelMixin
   _checkCost: ->
     @cost = parseInt(@cost)
     @cost = 0 if isNaN(@cost)
+    @amount = parseInt(@amount)
+    @amount = 1 if isNaN(@amount) or @amount < 1
   afterLoad: (cb = ->) ->
     @_checkCost()
+    @amount ?= 1
     @groups ?= []
     @updateStatus()
     cb()
@@ -184,6 +187,7 @@ class Budget extends ModelMixin
       @projects.push(project)
       cb(null, project)
     ), (err) -> cb(err)
+    project
 
   getProject: (id) -> @projects.filter((p) -> p.objectId == id)[0] ? null
 
@@ -202,6 +206,7 @@ class Budget extends ModelMixin
       cb(null, task)
     ), (err) ->
       cb(err)
+    task
 
   @load: (cb) ->
     Budget.find {owner: "@currentUser"}, {

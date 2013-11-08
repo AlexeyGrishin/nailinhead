@@ -39,6 +39,28 @@ app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
   $scope.$on '$routeChangeSuccess', (ev, route) ->
     $scope.section = route.section
 
+  $scope.import = ->
+    b = $scope.budget
+    b.set data.amount
+    pByName = {}
+    projectsToSave = data.projects.length
+    for pData in data.projects
+      project = b.addProject pData, ->
+        projectsToSave--
+        if projectsToSave == 0
+          continueWithTasks()
+
+      pByName[project.name] = project
+    continueWithTasks = ->
+      for tData in data.tasks
+        project = pByName[tData.project]
+        if project is undefined
+          console.error "Cannot import task - unknown project '#{tData.project}' - #{JSON.stringify(tData, null, 4)}"
+          continue
+        task = project.addTask tData
+
+
+
 app.controller 'header', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
@@ -83,6 +105,8 @@ app.controller 'projects', ($scope, $location, tasksSelection) ->
     $scope.$apply()
   $scope.deleteProject = (project) ->
     project.delete()
+  $scope.isBooked = (task) ->
+    $scope.booking.include(task)
 
   # selection
   $scope.selection = tasksSelection.createSelection()
@@ -106,10 +130,15 @@ app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
     if (visibleTasks.length == 0)
       $scope.addTaskDialog = true
     safeApply($scope)
-
+  safeAmount = (amount) ->
+    amount = parseInt(amount)
+    amount = 1 if isNaN(amount) or amount < 1
+    amount
   $scope.currentTask = {}
-  $scope.newTask = {title: "", cost: 0}
+  $scope.newTask = {title: "", cost1: 0, amount: 1}
   $scope.addTask = ->
+    $scope.newTask.amount = safeAmount($scope.newTask.amount)
+    $scope.newTask.cost = $scope.newTask.cost1 * $scope.newTask.amount
     $scope.project.addTask($scope.newTask, -> safeApply($scope)) if $scope.newTask.title
     setTimeout (->
       $scope.addTaskDialog = true
@@ -135,13 +164,16 @@ app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
       original: task,
       edited: $.extend {}, task
     }
+    $scope.taskInEdit.edited.cost1 = $scope.taskInEdit.edited.cost / $scope.taskInEdit.edited.amount
 
   $scope.cancelEdit = ->
     $scope.taskInEdit = null
   $scope.saveTask = (task) ->
     task.withStatusUpdate (task) ->
       task.title = $scope.taskInEdit.edited.title
-      task.cost = $scope.taskInEdit.edited.cost
+      task.amount = safeAmount($scope.taskInEdit.edited.amount)
+      task.cost = $scope.taskInEdit.edited.cost1 * task.amount
+
     task.save()
     $scope.cancelEdit()
   $scope.isInEdit = (task) ->
@@ -250,4 +282,3 @@ app.directive 'ngEnter', ->
       if e.which == 13
         scope.$apply ->
           scope.$eval attrs.ngEnter
-

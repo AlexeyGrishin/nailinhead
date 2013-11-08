@@ -1,7 +1,6 @@
 app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
 
-require './test'
 {getDialog} = (require './ui')(app)
 (require './async')(app)
 (require './tasks/selection')(app)

@@ -12,11 +12,6 @@ module.exports = (grunt) ->
           "public/js/index.js": ["tools/loading.coffee"]
         options:
           bare: true
-      test:
-        files:
-          "public/js/test.js": ["src/model/*.coffee"]
-        options:
-          bare: true
       tests:
         expand: true
         cwd: "tests"
@@ -35,7 +30,6 @@ module.exports = (grunt) ->
       dev:
         files:
           "public/css/main.css": ["src/less/**/main.less"]
-          "public/css/test.css": ["src/less/**/test.less"]
     karma:
       options:
         configFile: 'karma.coffee'
@@ -65,7 +59,6 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-contrib-watch'
   grunt.loadNpmTasks 'grunt-karma'
   grunt.registerTask 'dev', ['coffee:building','less', 'coffee', 'browserify']
-  grunt.registerTask 'test', ['coffee:test']
   grunt.registerTask 'unit-tests', ['coffee:tests', 'karma:runBackground:run']
   grunt.registerTask 'unit-tests-run', ['dev', 'coffee:tests', 'karma:run']
   grunt.registerTask 'default', ['dev']

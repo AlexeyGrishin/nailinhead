@@ -14,8 +14,10 @@
     <link rel="icon" type="image/png" href="/favicon.ico" />
     <title>nailinhead</title>
     <script src="lang/ru.json" type="granula/language" gr-lang="ru"></script>
+    <script gr-lang='en' type='granula/lang' src='lang/en-enums.json'></script>
+    <script gr-lang='ru' type='granula/lang' src='lang/ru-enums.json'></script>
 </head>
-<body ng-controller="global" gr-lang="ru">
+<body ng-controller="global" gr-lang="{{currentLanguage}}">
     <div class="header" ng-controller="header">
         <div class="header-content">
             <div class="budget" title="Edit current budget" ng-show="auth.loggedIn" gr-attrs="title">
@@ -46,7 +48,6 @@
             <lang-selector></lang-selector>
             <strong class="user-name" gr-key>You are logged in as {{auth.currentUser.username}}</strong>
             <a class="logout link-danger" ng-click="logout()" gr-key>Logout</a>
-            <a ng-click="export()">Export</a>
 
         </div>
     </div>

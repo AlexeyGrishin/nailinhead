@@ -50,7 +50,7 @@
                 &times; <input ng-model="taskInEdit.edited.amount" class="input-short"/>
             </label>
             <label class="total">
-                = {{taskInEdit.edited.cost1 * taskInEdit.edited.amount}}
+                = {{taskInEdit.edited.cost1 * taskInEdit.edited.amount | cost}}
             </label>
             <div class="triangle-btn delete" ng-click="deleteTask(task)" title="Click to delete the task" gr-attrs="title"><i></i></div>
         </dialog-panel>
@@ -72,7 +72,7 @@
                 &times; <input ng-model="newTask.amount" class="input-short"/>
             </label>
             <label class="total">
-                = {{newTask.cost1 * newTask.amount}}
+                = {{newTask.cost1 * newTask.amount | cost}}
             </label>
             <!--span class="hint"><span gr-key>You may enter cost at the end after ',' or ' ', like this: </span><b gr-key>Buy a refrigerator, $200</b></span-->
         </dialog-panel>

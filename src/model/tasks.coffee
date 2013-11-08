@@ -1,8 +1,10 @@
 this.require = false
 if require
   ModelMixin = require('./persistence')
+  Report = require('./report')
 else
   ModelMixin = window.ModelMixin
+  Report = window.Report
 
 
 copy = (props) ->
@@ -151,14 +153,26 @@ class Budget extends ModelMixin
 
 
   report: (month, year) ->
-    report = {loading:true, tasks: []}
-    Task.find {budget: @objectId, completed: 1, cMonth:month, cYear: year}, {
-      success: (tasks) ->
-        report.loading = false
-        report.tasks = tasks
-      error: ->
-        #error
-    }
+    report = {loading:true}
+    getTasks = (month, year, reportBuilder, prevMonth, cb) =>
+      Task.find(budget: @objectId, completed: 1, cMonth:month, cYear: year).then (tasks) ->
+        reportBuilder.prependTasks(month, year, tasks)
+        if prevMonth > 0
+          month--
+          if month < 0
+            month = 11
+            year--
+          getTasks(month, year, reportBuilder, prevMonth-1, cb)
+        else
+          cb(reportBuilder)
+      , (error) -> #error
+    builder = new Report()
+    getTasks month, year, builder, 2, ->
+      r = builder.build(month, year)
+      report.tasks = r.tasks
+      report.dates = r.dates
+      report.projects = r.projects
+      report.loading = false
     report
 
   set: (amount, force = false) ->

@@ -1,5 +1,6 @@
 {
-    "-------------------added": "Fri Nov 08 2013 04:20:59 GMT+0400 (Московское время (зима))",
+    "-------------------added": "Sat Nov 09 2013 02:51:26 GMT+0400 (Московское время (зима))",
+    "Report for {{year}} / {{monthR | month}}": "Отчет за {{monthR | month}} {{year}}",
     "Booked tasks total amount": "Сумма зарезервированных задач",
     "Show the rest {{task.rest}} task(s)": "Показать оставшиеся {{task.rest}} покуп(ку,ки,ок)",
     "Click to buy this item": "Щелкните чтобы завершить покупку",
@@ -7,7 +8,6 @@
     "This item is unavailable": "Недостаточно средств для совершения покупки",
     "Click to edit or delete the task": "Щелкните чтобы отредактировать или удалить покупку",
     "Click to delete the task": "Щелкните чтобы удалить покупку",
-    "Report for {{year}} / {{monthR}}": "Отчет за {{year}} / {{monthR}}",
     "Username is missing": "Пожалуйста, укажите имя пользователя",
     "Password is missing": "Пожалуйста, укажите пароль",
     "Username is already taken by another user": "К сожалению, это имя пользователя уже занято",

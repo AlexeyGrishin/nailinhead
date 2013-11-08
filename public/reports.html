@@ -1,10 +1,10 @@
 <div class="top-panel reports">
-    <h3 gr-key>Report for {{year}} / {{monthR}}</h3>
+    <h3 gr-key>Report for {{year}} / {{monthR | month}}</h3>
     <div class="buttons">
-        <a class="btn btn-good" href="#/reports/{{prev.year}}/{{prev.month}}" gr-key><< Previous</a>
-        <a class="btn btn-good" href="#/reports/" gr-key>Current month</a>
-        <a class="btn btn-good" href="#/reports/{{next.year}}/{{next.month}}" ng-show="hasNext" gr-key>Next >></a>
-        <a class="btn btn-disabled" ng-hide="hasNext" gr-key>Next >></a>
+        <a class="btn btn-good" href="#/reports/{{prev.year}}/{{prev.month}}"><< {{prev.month | month}} </a> &nbsp;
+        <a class="btn btn-good" href="#/reports/" gr-key>Current month</a> &nbsp;
+        <a class="btn btn-good" href="#/reports/{{next.year}}/{{next.month}}" ng-show="hasNext">{{next.month | month}} >></a>
+        <a class="btn btn-disabled" ng-hide="hasNext">{{next.month | month}} >></a>
 
     </div>
 </div>
@@ -15,9 +15,20 @@
 <div class="empty-case" ng-show="!report.loading && report.tasks.length == 0" gr-key>
     No tasks completed in this month
 </div>
-<ul ng-show="!report.loading && report.tasks.length > 0">
-    <li ng-repeat="task in report.tasks">
-        {{task.title}}({{task.cProjectName}}) - <b>{{options.currency}} {{task.cost}}</b>
+<table ng-show='!report.loading' class="report-table">
+    <tr>
+        <th></th>
+        <th ng-repeat='date in report.dates' ng-class='{current: date.month == month && date.year == year}'>{{date.month | month}} {{date.year}}</th>
+    </tr>
+    <tr ng-repeat='proj in report.projects'>
+        <th>{{proj.name}}</th>
+        <td ng-repeat='sum in proj.sums' ng-class='{current: $last}'>{{sum}}</td>
+    </tr>
+</table>
+<ul ng-show="!report.loading && report.tasks.length > 0" class="report-tasks-list">
+    <li ng-repeat="task in report.tasks | orderBy:'cProjectName'">
+        <strong>{{task.title}} <span class="tag">{{task.cProjectName}}</span></strong>
+        <span class="cost">{{task.cost | cost}}</span>
     </li>
 </ul>
 

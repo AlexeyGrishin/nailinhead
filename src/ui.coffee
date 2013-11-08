@@ -147,7 +147,7 @@ module.exports = (app) ->
     template: "<span class='currency'>{{budget.currency}}</span>"
     restrict: 'E'
 
-
+  MAX_STEPS = 100
   app.directive 'countdown', ->
     (scope, el, attrs) ->
       to = null
@@ -158,7 +158,7 @@ module.exports = (app) ->
         if el.is("input")
           el.val(val)
         else
-          el.text(val + "")
+          el.html(formatCost(val, '&nbsp;') + "")
       el.on('focus', -> inFocus = true).on('blur', -> inFocus = false)
       scope.$watch attrs.countdown, (newVal) ->
         clearTimeout(to)
@@ -166,6 +166,8 @@ module.exports = (app) ->
         target = parseInt(newVal)
         target = 0 if isNaN(target)
         el.addClass("start-counting")
+        step = scope.$eval(attrs.step) ? 1
+        step = step * 2 while (Math.abs(target - val) / step) > MAX_STEPS
         doStep = ->
           if inFocus
             val = target
@@ -173,7 +175,6 @@ module.exports = (app) ->
             el.removeClass("start-counting")
             setElVal(target)
             return
-          step = scope.$eval(attrs.step) ? 1
           if target > val
             val += step
             val = target if val > target
@@ -186,39 +187,45 @@ module.exports = (app) ->
 
   app.directive 'uiTitle', ->
     (scope, el, attrs) ->
-      el.tooltip placement: "right", title: -> attrs.uiTitle
+      el.tooltip placement: "right", html: true, title: -> attrs.uiTitle
 
   addZeros = (num, amount) ->
     str = num + ''
     str = '0' + str while str.length < amount
     str
-  app.filter 'cost', ->
+
+  formatCost = (input, separator = ' ') ->
+    parts = []
+    div = parseFloat(input)
+    div = 0 if isNaN(div)
+    return 0 if div == 0
+    while div > 0
+      rem = div % 1000
+      div = div / 1000 |0
+      parts.unshift if div > 0 then addZeros(rem, 3) else rem
+    parts.join(separator)
+
+  app.filter 'cost', -> formatCost
+
+  app.filter 'month', (grService) ->
     (input) ->
-      parts = []
-      div = parseFloat(input)
-      div = 0 if isNaN(div)
-      return 0 if div == 0
-      while div > 0
-        rem = div % 1000
-        div = div / 1000 |0
-        parts.unshift if div > 0 then addZeros(rem, 3) else rem
-      parts.join(' ')
+      grService.compile("month#{input}")
 
   LANG_KEY = 'NIH_language'
 
-  app.directive 'langSelector', (grService) ->
+  app.directive 'langSelector', ($rootScope, grService) ->
+    $rootScope.currentLanguage = localStorage[LANG_KEY] ? grService.originalLanguage
+    $rootScope.$on 'gr-lang-changed', (e, lang) ->
+      $rootScope.currentLanguage = lang
+      localStorage[LANG_KEY] = lang
     replace: true
     restrict: 'E'
     templateUrl: 'partial/language-selector.html'
     link: (scope, el, attrs) ->
       scope.languages = ['en', 'ru']
-      scope.$on 'gr-lang-changed', (e, lang) ->
-        scope.currentLanguage = lang
-        localStorage[LANG_KEY] = lang
-      scope.currentLanguage = grService.language
       scope.changeLanguage = (lang) ->
         grService.setLanguage lang
-      grService.setLanguage localStorage[LANG_KEY] ? grService.language
+
 
   #<a long-click='doAction()' processing='processing'>
   app.directive 'longClick', ->

@@ -1,0 +1,52 @@
+.report-table {
+  margin-bottom: 10px;
+  margin-top: 10px;
+  font-size: @fontBig;
+  border-collapse: collapse;
+  td, th {
+    border: 1px @grayLight solid;
+    margin: 0;
+    padding: 10px;
+  }
+  th {
+    background: @grayPanel;
+  }
+  th.current {
+    background: @greenPanel;
+  }
+  td.current {
+    background: @goldPanel;
+  }
+}
+
+.report-tasks-list {
+  list-style: none;
+  padding-left: 0;
+  li {
+    height: @taskRowHeight;
+    line-height: @taskRowHeight;
+    background-color: #eee;
+    width: 100%;
+    position: relative;
+    border-bottom: 1px solid #cccccc;
+    > strong {
+      display: block;
+      line-height: @taskRowHeight;
+      margin-right: 200px;
+      font-size: @fontBigger;
+      padding-left: 30px;
+    }
+    > span.tag {
+      padding-left: 10px;
+    }
+    > span.cost {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      right: 20px;
+      width: 200px;
+      font-size: @fontBig;
+      text-align: right;
+    }
+  }
+}

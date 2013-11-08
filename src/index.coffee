@@ -159,6 +159,7 @@ app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
     $scope.cancelEdit()
     return if wasEdited
     $scope.selection.deselectAll()
+    $scope.addTaskDialog = false
     $scope.taskInEdit = {
       original: task,
       edited: $.extend {}, task
@@ -202,7 +203,7 @@ app.controller 'reports', (budget, $scope, $routeParams, $location) ->
 
   $scope.loading = true
   $scope.month = month
-  $scope.monthR = month + 1
+  $scope.monthR = month
   $scope.year = year
   $scope.prev = {
     month: if month == 0 then 11 else month - 1

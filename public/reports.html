@@ -9,15 +9,15 @@
     </div>
 </div>
 <div class="data">
-<div class="loading" ng-show="loading" gr-key>
+<div class="loading" ng-show="report.loading" gr-key>
     Loading, please wait...
 </div>
-<div class="empty-case" ng-show="!loading && report.tasks.length == 0" gr-key>
+<div class="empty-case" ng-show="!report.loading && report.tasks.length == 0" gr-key>
     No tasks completed in this month
 </div>
-<ul ng-show="!loading && report.tasks.length > 0">
+<ul ng-show="!report.loading && report.tasks.length > 0">
     <li ng-repeat="task in report.tasks">
-        {{task.title}} - <b>{{options.currency}} {{task.cost}}</b>
+        {{task.title}}({{task.cProjectName}}) - <b>{{options.currency}} {{task.cost}}</b>
     </li>
 </ul>
 

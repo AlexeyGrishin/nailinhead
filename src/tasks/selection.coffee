@@ -1,9 +1,9 @@
 module.exports = (app) ->
 
-  app.service 'tasksSelection', (tasksService) ->
+  app.service 'tasksSelection', ->
 
     class Selection
-      constructor: ->
+      constructor: () ->
         @tasks = []
       toggleSelection: (task) ->
         idx = @tasks.indexOf(task)
@@ -18,26 +18,30 @@ module.exports = (app) ->
       deselectAll: ->
         @tasks.splice(0, @tasks.length)
       delete: ->
-        @tasks.forEach (t) -> tasksService.deleteTask(t)
+        @tasks.forEach (t) -> t.project.deleteTask(t)
         @deselectAll()
+      $watch: -> => @getSelectionAsTask()
 
       toggleBookingTask: ->
+        return false if @tasks.length == 0
+        booking = @tasks[0].budget.booked
         selectionBooked = @isBooked()
-        tasksToToggle = @tasks.filter (t) -> tasksService.isBooked(t) == selectionBooked
-        tasksToToggle.forEach (task) ->
-          tasksService.toggleBooking(task)
+        tasksToToggle = @tasks.filter (t) -> booking.include(t) == selectionBooked
+        tasksToToggle.forEach (task) -> booking.toggle(task)
 
       toggle: ->
         nonCompleted = @tasks.filter (t) -> not t.is("completed")
         tasksToToggle = if nonCompleted.length == 0 then @tasks else nonCompleted
-        tasksToToggle.forEach (task) ->
-          #TODO: batch
-          tasksService.toggle(task)
+        tasksToToggle.forEach (task) -> task.toggle()
       isBooked: ->
-        @tasks.every (t) ->tasksService.isBooked(t)
+        return false if @tasks.length == 0
+        booking = @tasks[0].budget.booked
+        @tasks.every (t) -> booking.include(t)
       getSelectionAsTask: ->
         nonCompleted = @tasks.filter (t) -> not t.is("completed")
-        task = {}
+        task = {
+          booked: @isBooked()   #this is for $watch
+        }
         if (nonCompleted.length == 0)
           #all completed
           task.cost = @tasks.map((t) ->t.cost).reduce ((a,b)->a+b), 0
@@ -45,15 +49,15 @@ module.exports = (app) ->
           task
         else
           #ignore completed
+          budget = nonCompleted[0].budget
           task.cost = nonCompleted.map((t) ->t.cost).reduce ((a,b)->a+b), 0
-          task.status = tasksService.getStatusForCost(task.cost)
+          task.status = budget.getStatusForCost(task.cost)
         task
 
     createSelection: ->
       new Selection()
 
   #<something select-to='selection' select-with='click|ctrl-click' select='object'>
-  #TODO: filter non-tasks
   app.directive 'selectTo', ->
     (scope, el, attrs) ->
       selection = scope.$eval(attrs.selectTo)

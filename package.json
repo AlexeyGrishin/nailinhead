@@ -18,5 +18,8 @@
     "karma-html-reporter": "*",
     "karma-coffee-preprocessor": "*",
     "granula": "~1.0.4"
+  },
+  "devDependencies": {
+    "underscore": "~1.5.2"
   }
 }

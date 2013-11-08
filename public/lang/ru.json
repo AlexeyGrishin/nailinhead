@@ -1,7 +1,7 @@
 {
-    "-------------------added": "Sat Nov 02 2013 04:58:07 GMT+0400 (Московское время (зима))",
+    "-------------------added": "Fri Nov 08 2013 04:20:59 GMT+0400 (Московское время (зима))",
+    "Booked tasks total amount": "Сумма зарезервированных задач",
     "Show the rest {{task.rest}} task(s)": "Показать оставшиеся {{task.rest}} покуп(ку,ки,ок)",
-    "-----------------deleted": {},
     "Click to buy this item": "Щелкните чтобы завершить покупку",
     "Click to cancel buying this item": "Щелкните чтобы отменить покупку",
     "This item is unavailable": "Недостаточно средств для совершения покупки",
@@ -37,8 +37,6 @@
     "Add your task!": "Добавьте новую покупку!",
     "Save": "Сохранить",
     "Close": "Закрыть",
-    "You may enter cost at the end after ',' or": "Вы можете ввести стоимость после названия, например: ",
-    "Buy a refrigerator, $200": "Купить слона, 500",
     "Add new project": "Добавить проект",
     "New project name:": "Имя проекта:",
     "Create your first project first!": "Создайте новый проект для начала!",

@@ -1,48 +1,18 @@
 <!DOCTYPE html>
-<html ng-app="puzzle">
+<html>
 <head>
     <meta charset="utf-8"/>
     <script src="js/jquery.js"></script>
     <script src="js/angular.js"></script>
-    <script src="js/index.js"></script>
+    <script src="js/parse-1.2.12.js"></script>
+    <script src="js/test.js"></script>
     <link rel="stylesheet" href="css/bootstrap.css"/>
     <link rel="stylesheet" href="css/test.css"/>
 </head>
-<body ng-controller="test" class="test">
-<input ng-model="budget.amount"/>
-
-
-
-    <div class="row">
-        <div class="span6 puzzle-holder">
-            <canvas class="project-img"></canvas>
-            <div class="puzzle-tip"
-                 ng-repeat="part in puzzle.split.parts"
-                 puzzle-part-toggle="toggleTask(part)"
-                 puzzle-part="part"
-                 puzzle-part-no-image="true"
-            >
-
-            </div>
-        </div>
-        <div class="span6">
-            <ul>
-                <li>
-                    <button ng-click="addTask()">Добавить</button>
-                </li>
-                <li ng-repeat="task in project.tasks" class="task.status">
-                    <div class="puzzle-part"
-                         puzzle-part="puzzle.split.parts[$index]"
-                         puzzle-part-toggle="toggleTask(puzzle.split.parts[$index])"
-                         puzzle-part-size="32"
-                            >
-
-                    </div>
-                    {{ task.title }} ( {{ task.cost }} ) - {{ task.status }}
-                </li>
-            </ul>
-        </div>
-    </div>
+<body>
+<script>
+    Parse.initialize('eXTzA1h8G4j7HzEpKbsHpJh4ZbzpkFKRzxn50gJp', 'vJpkQiAsEzDuoNGjRPUr0xcbgP2g7G4nnnQax7Mf');
+</script>
 
 </body>
 </html>

@@ -1,11 +1,5 @@
-createTasksService = require './tasks/tasks'
-
 app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
-app.service 'tasksService', (backend) ->
-  tasksService = createTasksService backend
-  backend.init()
-  tasksService
 
 require './test'
 {getDialog} = (require './ui')(app)
@@ -13,53 +7,64 @@ require './test'
 (require './tasks/selection')(app)
 (require './tasks/actions')(app)
 (require './auth/auth')(app)
+(require './model/tasks_angular')(app)
 
-app.controller 'global', ($scope, tasksService, backend, auth, $location, $route) ->
+app.config (budgetProvider) ->
+  #budgetProvider.setMode 'debug'
+  #budgetProvider.setMode 'local'
+
+app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
   $scope.loading = true
-  tasksService.onLoad ->
-    $scope.loading = false
-  $scope.options = tasksService.options
+  reset = ->
+    $scope.budget = {amount: 0}
+    $scope.booking = {amount: ->0}
+  reset()
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->
     console.log "load tasks"
-    tasksService.load (error) ->
-      console.error error if error
+    budget.load().then ((budget) ->
+      $scope.budget = budget
+      $scope.booking = budget.booked
+      $scope.loading = false
       $scope.$apply()
+    ), (error) ->
+      console.error error if error
   $scope.$on 'auth:loginFailed', ->
     $location.path "/auth"
   $scope.logout = ->
+    reset()
+    budget.unload()
     auth.logout(->)
   auth.check()
   $scope.$on '$routeChangeSuccess', (ev, route) ->
     $scope.section = route.section
 
-  $scope.export = ->
-    budget = {
-      amount: tasksService.budget.amount,
-      projects: tasksService.projects.map (p) -> {name: p.name, deleted: 0}
-      tasks: []
-    }
-    for proj in tasksService.projects
-      for task in proj.tasks
-        t = {title: task.title, cost: task.cost, groups: task.groups, amount: 1, completed: (if task.status == 'completed' then 1 else 0), deleted: 0, project: proj.name}
-        if t.completed
-          date = t.completedDate ? t.completionDate ? new Date()
-          t.cMonth = date.getMonth()
-          t.cYear = date.getFullYear()
-          t.cProjectName = proj.name
-        budget.tasks.push t
-    console.log JSON.stringify(budget, null, 4)
+  $scope.import = ->
+    b = $scope.budget
+    b.set data.amount
+    pByName = {}
+    projectsToSave = data.projects.length
+    for pData in data.projects
+      project = b.addProject pData, ->
+        projectsToSave--
+        if projectsToSave == 0
+          continueWithTasks()
+
+      pByName[project.name] = project
+    continueWithTasks = ->
+      for tData in data.tasks
+        project = pByName[tData.project]
+        if project is undefined
+          console.error "Cannot import task - unknown project '#{tData.project}' - #{JSON.stringify(tData, null, 4)}"
+          continue
+        task = project.addTask tData
 
 
-app.controller 'header', ($scope, tasksService) ->
-  $scope.budget = tasksService.budget
-  $scope.booking = tasksService.booking
-  $scope.$watch 'currency', (newVal) ->
-    return unless $scope.auth.loggedIn
-    tasksService.setCurrency(newVal) if newVal
+
+app.controller 'header', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
-    tasksService.setBudget newVal
+    $scope.budget.set newVal
 
 app.config ($routeProvider) ->
   $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'
@@ -85,66 +90,68 @@ app.controller 'login', ($scope, auth, $location) ->
     $scope.logReg = true
   $scope.register = ->
     startCall()
-    auth.register $scope.auth.username, $scope.auth.password, {
-      options: {currency: "RUR"}
-      budget: {amount: 10000}
-    }, onLogReg
+    auth.register $scope.auth.username, $scope.auth.password, {}, onLogReg
   $scope.login = ->
     startCall()
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
 
-app.controller 'projects', (tasksService, tasksSelection, $scope, $location) ->
-  $scope.projects = tasksService.projects
-
+app.controller 'projects', ($scope, $location, tasksSelection) ->
   $scope.newProject = {title:""}
   $scope.addProject = ->
     if $scope.newProject.title
-      tasksService.addProject $scope.newProject.title, "/img/pic1.jpg", (proj) ->
+      $scope.budget.addProject {name: $scope.newProject.title}, (err, proj)->
         $scope.$apply ->
           $location.path "/#{proj.objectId}"
     $scope.$apply()
   $scope.deleteProject = (project) ->
-    tasksService.deleteProject project, ->
-      $scope.$apply()
+    project.delete()
+  $scope.isBooked = (task) ->
+    $scope.booking.include(task)
 
   # selection
   $scope.selection = tasksSelection.createSelection()
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
 
+
 SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
-app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) ->
+safeApply = ($scope)->
+  $scope.$apply() if not $scope.$$phase
+app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
 
   $scope.showCompleted = localStorage?[SHOW_COMPLETED_KEY] == 'true'
   $scope.$watch 'showCompleted', ->
     localStorage?[SHOW_COMPLETED_KEY] = $scope.showCompleted
 
   projectId = $routeParams.project
-  tasksService.onLoad ->
-    tasksService.selectProject(projectId)
-    tasksService.updateStatus()
-    $scope.project = tasksService.project
+  budget.whenLoad().then (budget) ->
+    $scope.project = budget.getProject(projectId)
     visibleTasks = if $scope.showCompleted then $scope.project.tasks else $scope.project.nonCompleted()
     if (visibleTasks.length == 0)
       $scope.addTaskDialog = true
-    $scope.$apply() if not $scope.$$phase
-
+    safeApply($scope)
+  safeAmount = (amount) ->
+    amount = parseInt(amount)
+    amount = 1 if isNaN(amount) or amount < 1
+    amount
   $scope.currentTask = {}
-  $scope.newTask = {title: ""}
+  $scope.newTask = {title: "", cost1: 0, amount: 1}
   $scope.addTask = ->
-    tasksService.addTask $scope.newTask.title, $scope.newTask.cost if $scope.newTask.title
+    $scope.newTask.amount = safeAmount($scope.newTask.amount)
+    $scope.newTask.cost = $scope.newTask.cost1 * $scope.newTask.amount
+    $scope.project.addTask($scope.newTask, -> safeApply($scope)) if $scope.newTask.title
     setTimeout (->
       $scope.addTaskDialog = true
       $scope.$apply()
     ), 0
   $scope.deleteTask = (task) ->
-    tasksService.deleteTask task
+    $scope.project.deleteTask task
   $scope.toggleTask = (task) ->
-    tasksService.toggle(task)
+    task.toggle().then -> safeApply($scope)
   $scope.isBooked = (task) ->
-    tasksService.isBooked(task)
+    $scope.booking.include(task)
   $scope.toggleBookingTask = (task) ->
-    tasksService.toggleBooking(task)
+    $scope.booking.toggle(task)
 
   # editing
   $scope.taskInEdit = null
@@ -157,13 +164,17 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
       original: task,
       edited: $.extend {}, task
     }
+    $scope.taskInEdit.edited.cost1 = $scope.taskInEdit.edited.cost / $scope.taskInEdit.edited.amount
 
   $scope.cancelEdit = ->
     $scope.taskInEdit = null
   $scope.saveTask = (task) ->
-    task.title = $scope.taskInEdit.edited.title
-    task.updateCost($scope.taskInEdit.edited.cost)
-    tasksService.saveTask(task)
+    task.withStatusUpdate (task) ->
+      task.title = $scope.taskInEdit.edited.title
+      task.amount = safeAmount($scope.taskInEdit.edited.amount)
+      task.cost = $scope.taskInEdit.edited.cost1 * task.amount
+
+    task.save()
     $scope.cancelEdit()
   $scope.isInEdit = (task) ->
     $scope.taskInEdit?.original is task
@@ -174,7 +185,7 @@ app.controller 'project', (tasksSelection, tasksService, $scope, $routeParams) -
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
 
-app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
+app.controller 'reports', (budget, $scope, $routeParams, $location) ->
   year = parseFloat($routeParams.year)
   month = parseFloat($routeParams.month)
   month = 0 if not isNaN(year) and isNaN(month)
@@ -203,12 +214,11 @@ app.controller 'reports', (tasksService, $scope, $routeParams, $location) ->
     year: if month == 11 then year + 1 else year
   }
   $scope.hasNext = true
-  tasksService.getReport date, (err, report) ->
-    $scope.loading = false
+  $scope.report = {loading: true}
+  budget.whenLoad().then (budget) ->
+    $scope.report = budget.report($scope.month, $scope.year)
     $scope.hasNext = (year < today.getFullYear() || month < today.getMonth())
-    $scope.report = report
-    $scope.$apply()
-  #tbd
+    safeApply($scope)
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->
@@ -251,11 +261,12 @@ app.service 'projectThumbModel', ->
 
 
 
-app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
+app.directive 'projectThumb', (projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
     selection: "=selection"
     deleteProject: "&deleteProject"
+    isBooked: "&isBooked"
   replace: true
   templateUrl: "partial/project-thumb.html"
   link: (scope, el, attrs) ->
@@ -263,9 +274,7 @@ app.directive 'projectThumb', (tasksService, projectThumbModel, $location) ->
     scope.click = (task) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
-    scope.isBooked = (task) -> tasksService.isBooked(task) if task.status != 'more'
     scope.isSelected = (task) -> scope.selection.isSelected(task)
-    scope.$watch("project", (-> scope.thumb.update()), true)
 
 app.directive 'ngEnter', ->
   (scope, el, attrs) ->
@@ -273,4 +282,3 @@ app.directive 'ngEnter', ->
       if e.which == 13
         scope.$apply ->
           scope.$eval attrs.ngEnter
-

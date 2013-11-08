@@ -16,7 +16,7 @@ app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
   $scope.loading = true
   reset = ->
     $scope.budget = {amount: 0}
-    $scope.booking = {amount: ->0}
+    $scope.booking = {amount: ->undefined}
   reset()
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->

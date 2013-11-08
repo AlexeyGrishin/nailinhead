@@ -163,7 +163,8 @@ module.exports = (app) ->
       scope.$watch attrs.countdown, (newVal) ->
         clearTimeout(to)
         return if inFocus
-        target = newVal
+        target = parseInt(newVal)
+        target = 0 if isNaN(target)
         el.addClass("start-counting")
         doStep = ->
           if inFocus

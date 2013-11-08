@@ -324,12 +324,12 @@ button.link[disabled]:hover {
   line-height: 30px;
 }
 .dialog-panel.one-line .buttons {
-  float: left;
+  float: right;
   height: 30px;
   line-height: 30px;
   padding-top: 0;
-  padding-right: 0;
-  padding-left: 10px;
+  padding-right: 20px;
+  padding-left: 20px;
   padding-bottom: 0;
 }
 form {
@@ -342,7 +342,7 @@ input {
   padding: 4px 10px;
 }
 input.input-long {
-  width: 200px;
+  width: 300px;
 }
 input.input-short {
   width: 50px;
@@ -607,6 +607,12 @@ ul.tasks-list li > strong:hover {
   background-repeat: no-repeat;
   cursor: pointer;
 }
+ul.tasks-list li > strong > .amount {
+  font-size: 10px;
+  font-style: normal;
+  font-weight: bold;
+  color: #444444;
+}
 ul.tasks-list li > div.dialog-panel {
   width: auto;
   margin-left: 20px;
@@ -687,7 +693,6 @@ section.task-actions {
   position: absolute;
   display: block;
   top: 0;
-  bottom: 0;
   right: 43.333333333333336px;
   width: 210px;
   text-align: right;
@@ -732,6 +737,9 @@ section.task-actions.completed .status-action > span > span {
 }
 section.task-actions.unavailable .status-action > span {
   color: gray;
+}
+label.total {
+  font-size: 14px;
 }
 .selection-panel {
   position: fixed;
@@ -888,6 +896,7 @@ body {
 }
 .main-content {
   padding-top: 45px;
+  padding-bottom: 30px;
   position: relative;
   width: 100%;
   max-width: 1000px;

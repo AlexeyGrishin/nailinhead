@@ -128,7 +128,7 @@
 
 },{}],3:[function(require,module,exports){
 (function() {
-  var Backend, Group, Me, Project, Report, canSave, mode;
+  var Backend, Group, Me, Project, Report;
 
   Project = Parse.Object.extend("Project");
 
@@ -138,14 +138,6 @@
 
   Me = function() {
     return Parse.User.current();
-  };
-
-  mode = "test";
-
-  canSave = function(act) {
-    if (mode !== "dev") {
-      return act();
-    }
   };
 
   Backend = {
@@ -222,196 +214,6 @@
           return _this.loading--;
         }
       };
-    },
-    getProjects: function(cb) {
-      var pq,
-        _this = this;
-      pq = new Parse.Query(Project);
-      pq.equalTo("owner", Parse.User.current());
-      pq.ascending("createdAt");
-      return pq.find(this.defaultHandler(function(projects) {
-        _this.projects = projects;
-        return cb(projects.map(function(p) {
-          return p.toJSON();
-        }));
-      }));
-    },
-    addProject: function(projectData, cb) {
-      var project,
-        _this = this;
-      project = new Project(projectData);
-      project.set("owner", Parse.User.current());
-      project.setACL(new Parse.ACL(Parse.User.current()));
-      return canSave(function() {
-        return project.save(null, _this.defaultHandler(function(project) {
-          return cb(project.toJSON());
-        }));
-      });
-    },
-    saveProject: function(projectData, cb) {
-      var projectObject,
-        _this = this;
-      projectObject = new Project(projectData);
-      return canSave(function() {
-        return projectObject.save(null, _this.defaultHandler(cb));
-      });
-    },
-    deleteProject: function(projectData, cb) {
-      var projectObject;
-      projectObject = new Project(projectData);
-      return projectObject.destroy(this.defaultHandler(cb));
-    },
-    fetchProject: function(projectData, cb) {
-      var projectObject;
-      projectObject = new Project(projectData);
-      return projectObject.fetch(this.defaultHandler(function(project) {
-        return cb(project.toJSON());
-      }));
-    },
-    getOptions: function(cb) {
-      return cb(Me().get("options"));
-    },
-    setOptions: function(options, cb) {
-      var _this = this;
-      Me().set("options", options);
-      return canSave(function() {
-        return Me().save(_this.defaultHandler(cb));
-      });
-    },
-    saveCurrentUser: function(cb) {
-      var _this = this;
-      return canSave(function() {
-        return Me().save(_this.defaultHandler(cb));
-      });
-    },
-    getBudget: function(cb) {
-      return cb({
-        amount: Me().get("budget_amount")
-      });
-    },
-    setBudget: function(budget, cb) {
-      var diff, oldBudget,
-        _this = this;
-      oldBudget = Me().get("budget_amount");
-      diff = parseFloat(budget.amount) - oldBudget;
-      if (diff === 0) {
-        return;
-      }
-      Me().increment("budget_amount", diff);
-      return canSave(function() {
-        return Me().save(_this.defaultHandler(cb));
-      });
-    },
-    GROUP_NOT_FOUND: "group_not_found",
-    getGroup: function(groupName, cb) {
-      var gq,
-        _this = this;
-      gq = new Parse.Query("Group");
-      gq.equalTo("name", groupName);
-      gq.equalTo("owner", Parse.User.current());
-      return gq.find(this.defaultHandler(function(groups) {
-        var singleGroup;
-        if (groups.length === 0) {
-          return cb(_this.GROUP_NOT_FOUND);
-        }
-        singleGroup = groups[0];
-        return cb(null, singleGroup.toJSON());
-      }));
-    },
-    saveGroup: function(groupData, cb) {
-      var gr,
-        _this = this;
-      gr = new Group(groupData);
-      return canSave(function() {
-        return gr.save(null, _this.defaultHandler(cb));
-      });
-    },
-    addGroup: function(groupData, cb) {
-      var gr,
-        _this = this;
-      gr = new Group(groupData);
-      gr.set("owner", Parse.User.current());
-      gr.setACL(new Parse.ACL(Parse.User.current()));
-      return canSave(function() {
-        return gr.save(null, _this.defaultHandler(function(group) {
-          return cb(null, group.toJSON());
-        }));
-      });
-    },
-    addToReport: function(project, task, cb) {
-      var date, dateKey, _ref,
-        _this = this;
-      date = (_ref = task.completedDate) != null ? _ref : new Date();
-      dateKey = {
-        year: date.getFullYear(),
-        month: date.getMonth()
-      };
-      return this._getReport(dateKey, function(err, report) {
-        var _ref1;
-        if (err) {
-          return cb(err);
-        }
-        report.tasks = (_ref1 = report.tasks) != null ? _ref1 : [];
-        report.tasks.push({
-          title: task.title,
-          project: project != null ? project.objectId : void 0,
-          cost: task.cost,
-          completionDate: date
-        });
-        return _this._saveReport(report, cb);
-      });
-    },
-    _addReport: function(dateKey, cb) {
-      var report,
-        _this = this;
-      report = new Report(dateKey);
-      report.set("tasks", []);
-      report.set("owner", Parse.User.current());
-      report.setACL(new Parse.ACL(Parse.User.current()));
-      return canSave(function() {
-        return report.save(null, _this.defaultHandler(function(report) {
-          return cb(null, report.toJSON());
-        }));
-      });
-    },
-    _getReport: function(dateKey, cb) {
-      var key, rq, val,
-        _this = this;
-      rq = new Parse.Query("Report");
-      for (key in dateKey) {
-        val = dateKey[key];
-        rq.equalTo(key, val);
-      }
-      rq.equalTo("owner", Parse.User.current());
-      return rq.find(this.defaultHandler(function(reports) {
-        var rep, _ref;
-        if (reports.length === 0) {
-          return _this._addReport(dateKey, cb);
-        } else {
-          rep = reports[0];
-          rep.set("tasks", (_ref = rep.get("tasks")) != null ? _ref : []);
-          return cb(null, rep.toJSON());
-        }
-      }));
-    },
-    _saveReport: function(reportData, cb) {
-      var report,
-        _this = this;
-      report = new Report(reportData);
-      return canSave(function() {
-        return report.save(null, _this.defaultHandler(cb));
-      });
-    },
-    removeFromReport: function(task, cb) {
-      return cb();
-    },
-    getReport: function(date, cb) {
-      var dateKey;
-      dateKey = {
-        year: date.getFullYear(),
-        month: date.getMonth()
-      };
-      return this._getReport(dateKey, cb);
     }
   };
 
@@ -442,20 +244,11 @@
 
 },{"./parse":3}],5:[function(require,module,exports){
 (function() {
-  var SHOW_COMPLETED_KEY, app, createTasksService, getDialog;
-
-  createTasksService = require('./tasks/tasks');
+  var SHOW_COMPLETED_KEY, app, getDialog, safeApply;
 
   app = angular.module('puzzle', ['granula']);
 
   (require('./backend/parse_angular'))(app);
-
-  app.service('tasksService', function(backend) {
-    var tasksService;
-    tasksService = createTasksService(backend);
-    backend.init();
-    return tasksService;
-  });
 
   require('./test');
 
@@ -469,50 +262,91 @@
 
   (require('./auth/auth'))(app);
 
-  app.controller('global', function($scope, tasksService, backend, auth, $location, $route) {
+  (require('./model/tasks_angular'))(app);
+
+  app.config(function(budgetProvider) {});
+
+  app.controller('global', function($scope, budget, backend, auth, $location, $route) {
+    var reset;
     $scope.loading = true;
-    tasksService.onLoad(function() {
-      return $scope.loading = false;
-    });
-    $scope.options = tasksService.options;
+    reset = function() {
+      $scope.budget = {
+        amount: 0
+      };
+      return $scope.booking = {
+        amount: function() {
+          return 0;
+        }
+      };
+    };
+    reset();
     $scope.auth = auth;
     $scope.$on('auth:loggedIn', function() {
       console.log("load tasks");
-      return tasksService.load(function(error) {
-        if (error) {
-          console.error(error);
-        }
+      return budget.load().then((function(budget) {
+        $scope.budget = budget;
+        $scope.booking = budget.booked;
+        $scope.loading = false;
         return $scope.$apply();
+      }), function(error) {
+        if (error) {
+          return console.error(error);
+        }
       });
     });
     $scope.$on('auth:loginFailed', function() {
       return $location.path("/auth");
     });
     $scope.logout = function() {
+      reset();
+      budget.unload();
       return auth.logout(function() {});
     };
     auth.check();
-    return $scope.$on('$routeChangeSuccess', function(ev, route) {
+    $scope.$on('$routeChangeSuccess', function(ev, route) {
       return $scope.section = route.section;
     });
+    return $scope["import"] = function() {
+      var b, continueWithTasks, pByName, pData, project, projectsToSave, _i, _len, _ref;
+      b = $scope.budget;
+      b.set(data.amount);
+      pByName = {};
+      projectsToSave = data.projects.length;
+      _ref = data.projects;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        pData = _ref[_i];
+        project = b.addProject(pData, function() {
+          projectsToSave--;
+          if (projectsToSave === 0) {
+            return continueWithTasks();
+          }
+        });
+        pByName[project.name] = project;
+      }
+      return continueWithTasks = function() {
+        var tData, task, _j, _len1, _ref1, _results;
+        _ref1 = data.tasks;
+        _results = [];
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          tData = _ref1[_j];
+          project = pByName[tData.project];
+          if (project === void 0) {
+            console.error("Cannot import task - unknown project '" + tData.project + "' - " + (JSON.stringify(tData, null, 4)));
+            continue;
+          }
+          _results.push(task = project.addTask(tData));
+        }
+        return _results;
+      };
+    };
   });
 
-  app.controller('header', function($scope, tasksService) {
-    $scope.budget = tasksService.budget;
-    $scope.booking = tasksService.booking;
-    $scope.$watch('currency', function(newVal) {
-      if (!$scope.auth.loggedIn) {
-        return;
-      }
-      if (newVal) {
-        return tasksService.setCurrency(newVal);
-      }
-    });
+  app.controller('header', function($scope) {
     return $scope.$watch('budget.amount', function(newVal) {
       if (!$scope.auth.loggedIn) {
         return;
       }
-      return tasksService.setBudget(newVal);
+      return $scope.budget.set(newVal);
     });
   });
 
@@ -567,14 +401,7 @@
     };
     $scope.register = function() {
       startCall();
-      return auth.register($scope.auth.username, $scope.auth.password, {
-        options: {
-          currency: "RUR"
-        },
-        budget: {
-          amount: 10000
-        }
-      }, onLogReg);
+      return auth.register($scope.auth.username, $scope.auth.password, {}, onLogReg);
     };
     return $scope.login = function() {
       startCall();
@@ -582,14 +409,15 @@
     };
   });
 
-  app.controller('projects', function(tasksService, tasksSelection, $scope, $location) {
-    $scope.projects = tasksService.projects;
+  app.controller('projects', function($scope, $location, tasksSelection) {
     $scope.newProject = {
       title: ""
     };
     $scope.addProject = function() {
       if ($scope.newProject.title) {
-        tasksService.addProject($scope.newProject.title, "/img/pic1.jpg", function(proj) {
+        $scope.budget.addProject({
+          name: $scope.newProject.title
+        }, function(err, proj) {
           return $scope.$apply(function() {
             return $location.path("/" + proj.objectId);
           });
@@ -598,9 +426,10 @@
       return $scope.$apply();
     };
     $scope.deleteProject = function(project) {
-      return tasksService.deleteProject(project, function() {
-        return $scope.$apply();
-      });
+      return project["delete"]();
+    };
+    $scope.isBooked = function(task) {
+      return $scope.booking.include(task);
     };
     $scope.selection = tasksSelection.createSelection();
     return $scope.$on("$destroy", function() {
@@ -610,33 +439,48 @@
 
   SHOW_COMPLETED_KEY = 'NIH_proj_show_completed';
 
-  app.controller('project', function(tasksSelection, tasksService, $scope, $routeParams) {
-    var projectId;
+  safeApply = function($scope) {
+    if (!$scope.$$phase) {
+      return $scope.$apply();
+    }
+  };
+
+  app.controller('project', function(tasksSelection, budget, $scope, $routeParams) {
+    var projectId, safeAmount;
     $scope.showCompleted = (typeof localStorage !== "undefined" && localStorage !== null ? localStorage[SHOW_COMPLETED_KEY] : void 0) === 'true';
     $scope.$watch('showCompleted', function() {
       return typeof localStorage !== "undefined" && localStorage !== null ? localStorage[SHOW_COMPLETED_KEY] = $scope.showCompleted : void 0;
     });
     projectId = $routeParams.project;
-    tasksService.onLoad(function() {
+    budget.whenLoad().then(function(budget) {
       var visibleTasks;
-      tasksService.selectProject(projectId);
-      tasksService.updateStatus();
-      $scope.project = tasksService.project;
+      $scope.project = budget.getProject(projectId);
       visibleTasks = $scope.showCompleted ? $scope.project.tasks : $scope.project.nonCompleted();
       if (visibleTasks.length === 0) {
         $scope.addTaskDialog = true;
       }
-      if (!$scope.$$phase) {
-        return $scope.$apply();
-      }
+      return safeApply($scope);
     });
+    safeAmount = function(amount) {
+      amount = parseInt(amount);
+      if (isNaN(amount) || amount < 1) {
+        amount = 1;
+      }
+      return amount;
+    };
     $scope.currentTask = {};
     $scope.newTask = {
-      title: ""
+      title: "",
+      cost1: 0,
+      amount: 1
     };
     $scope.addTask = function() {
+      $scope.newTask.amount = safeAmount($scope.newTask.amount);
+      $scope.newTask.cost = $scope.newTask.cost1 * $scope.newTask.amount;
       if ($scope.newTask.title) {
-        tasksService.addTask($scope.newTask.title, $scope.newTask.cost);
+        $scope.project.addTask($scope.newTask, function() {
+          return safeApply($scope);
+        });
       }
       return setTimeout((function() {
         $scope.addTaskDialog = true;
@@ -644,16 +488,18 @@
       }), 0);
     };
     $scope.deleteTask = function(task) {
-      return tasksService.deleteTask(task);
+      return $scope.project.deleteTask(task);
     };
     $scope.toggleTask = function(task) {
-      return tasksService.toggle(task);
+      return task.toggle().then(function() {
+        return safeApply($scope);
+      });
     };
     $scope.isBooked = function(task) {
-      return tasksService.isBooked(task);
+      return $scope.booking.include(task);
     };
     $scope.toggleBookingTask = function(task) {
-      return tasksService.toggleBooking(task);
+      return $scope.booking.toggle(task);
     };
     $scope.taskInEdit = null;
     $scope.editTask = function(task) {
@@ -664,18 +510,22 @@
         return;
       }
       $scope.selection.deselectAll();
-      return $scope.taskInEdit = {
+      $scope.taskInEdit = {
         original: task,
         edited: $.extend({}, task)
       };
+      return $scope.taskInEdit.edited.cost1 = $scope.taskInEdit.edited.cost / $scope.taskInEdit.edited.amount;
     };
     $scope.cancelEdit = function() {
       return $scope.taskInEdit = null;
     };
     $scope.saveTask = function(task) {
-      task.title = $scope.taskInEdit.edited.title;
-      task.updateCost($scope.taskInEdit.edited.cost);
-      tasksService.saveTask(task);
+      task.withStatusUpdate(function(task) {
+        task.title = $scope.taskInEdit.edited.title;
+        task.amount = safeAmount($scope.taskInEdit.edited.amount);
+        return task.cost = $scope.taskInEdit.edited.cost1 * task.amount;
+      });
+      task.save();
       return $scope.cancelEdit();
     };
     $scope.isInEdit = function(task) {
@@ -688,7 +538,7 @@
     });
   });
 
-  app.controller('reports', function(tasksService, $scope, $routeParams, $location) {
+  app.controller('reports', function(budget, $scope, $routeParams, $location) {
     var date, month, today, year;
     year = parseFloat($routeParams.year);
     month = parseFloat($routeParams.month);
@@ -720,11 +570,13 @@
       year: month === 11 ? year + 1 : year
     };
     $scope.hasNext = true;
-    return tasksService.getReport(date, function(err, report) {
-      $scope.loading = false;
+    $scope.report = {
+      loading: true
+    };
+    return budget.whenLoad().then(function(budget) {
+      $scope.report = budget.report($scope.month, $scope.year);
       $scope.hasNext = year < today.getFullYear() || month < today.getMonth();
-      $scope.report = report;
-      return $scope.$apply();
+      return safeApply($scope);
     });
   });
 
@@ -804,12 +656,13 @@
     };
   });
 
-  app.directive('projectThumb', function(tasksService, projectThumbModel, $location) {
+  app.directive('projectThumb', function(projectThumbModel, $location) {
     return {
       scope: {
         project: "=projectThumb",
         selection: "=selection",
-        deleteProject: "&deleteProject"
+        deleteProject: "&deleteProject",
+        isBooked: "&isBooked"
       },
       replace: true,
       templateUrl: "partial/project-thumb.html",
@@ -821,17 +674,9 @@
             return $location.path("/" + scope.project.objectId);
           }
         };
-        scope.isBooked = function(task) {
-          if (task.status !== 'more') {
-            return tasksService.isBooked(task);
-          }
-        };
-        scope.isSelected = function(task) {
+        return scope.isSelected = function(task) {
           return scope.selection.isSelected(task);
         };
-        return scope.$watch("project", (function() {
-          return scope.thumb.update();
-        }), true);
       }
     };
   });
@@ -850,7 +695,1149 @@
 
 }).call(this);
 
-},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./tasks/actions":8,"./tasks/selection":11,"./tasks/tasks":12,"./test":13,"./ui":14}],6:[function(require,module,exports){
+},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./model/tasks_angular":8,"./tasks/actions":11,"./tasks/selection":13,"./test":15,"./ui":16}],6:[function(require,module,exports){
+(function() {
+  var BgSaver, MemClassMethods, MemInstanceMethods, ModelMixin, ParseClassMethods, ParseInstanceMethods, ParseNowriteInstanceMethods, ParseUtils, createMixin, parseBgSaver, parseSaver, parseSetAll,
+    __slice = [].slice;
+
+  ParseUtils = {
+    setSafe: function(obj, attr, val, okCb, errCb) {
+      var curVal, delta, promise;
+      curVal = obj.get(attr);
+      if (typeof val === 'number') {
+        delta = val - (curVal != null ? curVal : 0);
+        obj.increment(attr, delta);
+      } else {
+        obj.set(attr, val);
+      }
+      promise = new Parse.Promise();
+      promise._thenRunCallbacks({
+        success: okCb,
+        error: errCb
+      });
+      obj.save(null, {
+        success: function(result) {
+          if (result.get(attr) === val) {
+            return promise.resolve(result);
+          } else {
+            if (delta !== void 0) {
+              obj.increment(attr, -delta);
+              obj.save();
+            }
+            return promise.reject({
+              conflict: true
+            });
+          }
+        },
+        error: function(_, error) {
+          return promise.reject(error);
+        }
+      });
+      return promise;
+    },
+    structToQuery: function(parseClassName, data) {
+      var name, q, val;
+      q = new Parse.Query(parseClassName);
+      for (name in data) {
+        val = data[name];
+        if (val === '@currentUser') {
+          q.equalTo(name, Parse.User.current());
+        } else {
+          q.equalTo(name, val);
+        }
+      }
+      return q;
+    },
+    afterFind: function(items, options, promise) {
+      var countdown, loading, res, _ref, _ref1;
+      options.processItem = (_ref = options.processItem) != null ? _ref : function(item) {
+        return item;
+      };
+      options.postProcessItem = (_ref1 = options.postProcessItem) != null ? _ref1 : function(item, cb) {
+        return cb(item);
+      };
+      loading = items.length;
+      res = [];
+      if (loading === 0) {
+        return promise.resolve(res);
+      }
+      countdown = function() {
+        loading--;
+        if (loading === 0) {
+          return promise.resolve(res);
+        }
+      };
+      res = items.map(options.processItem);
+      return res.forEach(function(o) {
+        return options.postProcessItem(o, countdown);
+      });
+    },
+    find: function(parseClassName, data, options) {
+      var promise, q,
+        _this = this;
+      q = this.structToQuery(parseClassName, data);
+      promise = new Parse.Promise();
+      promise._thenRunCallbacks(options);
+      q.find().then((function(items) {
+        return _this.afterFind(items, options, promise);
+      }), function(error) {
+        return promise.reject(error);
+      });
+      return promise;
+    }
+  };
+
+  BgSaver = (function() {
+    function BgSaver(options) {
+      var _ref, _ref1;
+      if (options == null) {
+        options = {};
+      }
+      this.delay = (_ref = options.delay) != null ? _ref : 1000;
+      this.idGetter = (_ref1 = options.idGetter) != null ? _ref1 : function(obj) {
+        return obj.id;
+      };
+      this.saver = options.saver;
+      this.queue = [];
+      this.to = null;
+    }
+
+    BgSaver.prototype.save = function(obj) {
+      var existentInMap, promise,
+        _this = this;
+      existentInMap = this.queue.filter(function(q) {
+        return _this.idGetter(q.obj) === _this.idGetter(obj);
+      })[0];
+      if (existentInMap) {
+        console.log("Object already in queue - " + (this.idGetter(obj)) + " == " + (this.idGetter(existentInMap.obj)));
+        return existentInMap.promise;
+      }
+      console.log("Push object to saving queue - " + (this.idGetter(obj)));
+      promise = new Parse.Promise();
+      this.queue.push({
+        obj: obj,
+        promise: promise
+      });
+      clearInterval(this.to);
+      this.to = setTimeout(this._save.bind(this), this.delay);
+      return promise;
+    };
+
+    BgSaver.prototype._save = function() {
+      var o, _i, _len, _ref, _results,
+        _this = this;
+      console.log("Time to save queue - " + this.queue.length + " objects");
+      _ref = this.queue.splice(0, this.queue.length);
+      _results = [];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        o = _ref[_i];
+        _results.push((function(_arg) {
+          var obj, promise;
+          obj = _arg.obj, promise = _arg.promise;
+          return _this._saveObject(obj).then((function(res) {
+            return promise.resolve(res);
+          }), function(err) {
+            return promise.reject(err);
+          });
+        })(o));
+      }
+      return _results;
+    };
+
+    BgSaver.prototype._saveObject = function(obj, options) {
+      return this.saver.save(obj, options);
+    };
+
+    BgSaver.prototype.flush = function() {
+      console.log("Flush objects");
+      return this._save();
+    };
+
+    BgSaver.prototype.saveNow = function(obj, options) {
+      console.log("Save immediately - " + obj.constructor.name);
+      clearTimeout(this.to);
+      this._save();
+      return this._saveObject(obj, options);
+    };
+
+    return BgSaver;
+
+  })();
+
+  parseSaver = function() {
+    return {
+      save: function(obj, options) {
+        return obj.save(null, options);
+      },
+      saveNow: function(obj, options) {
+        return obj.save(null, options);
+      },
+      flush: function() {}
+    };
+  };
+
+  parseBgSaver = function(options) {
+    var bgSaver;
+    if (options == null) {
+      options = {};
+    }
+    options.saver = parseSaver();
+    bgSaver = new BgSaver(options);
+    return {
+      save: function(obj, options) {
+        return bgSaver.save(obj, options);
+      },
+      saveNow: function(obj, options) {
+        return bgSaver.saveNow(obj, options);
+      },
+      flush: function() {
+        return bgSaver.flush();
+      }
+    };
+  };
+
+  ModelMixin = (function() {
+    function ModelMixin() {}
+
+    ModelMixin.properties = function() {
+      var properties;
+      properties = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+      if (properties.length > 0) {
+        return this.prototype.getPropertyNames = function() {
+          return properties;
+        };
+      }
+    };
+
+    ModelMixin.prototype.save = function(data, options) {
+      var promise,
+        _this = this;
+      if (options === void 0) {
+        if (data != null ? data.success : void 0) {
+          options = data;
+          data = {};
+        } else {
+          options = {};
+        }
+      }
+      options.data = data;
+      if (!this.objectId) {
+        options.now = true;
+      }
+      this.beforeSave();
+      promise = new Parse.Promise();
+      promise._thenRunCallbacks(options);
+      delete options.success;
+      delete options.error;
+      this.persistence().save(this, options).then((function(json) {
+        _this.load(json);
+        return promise.resolve(_this);
+      }), function(error) {
+        return promise.reject(error);
+      });
+      return promise;
+    };
+
+    ModelMixin.prototype.load = function(data) {
+      var name, val, _results;
+      if (data == null) {
+        data = {};
+      }
+      _results = [];
+      for (name in data) {
+        val = data[name];
+        if (this[name] === '@currentUser') {
+          continue;
+        }
+        if (typeof this[name] === 'object' && typeof val === 'string') {
+          if (this[name].objectId === val) {
+            continue;
+          }
+        }
+        if (this[name] !== void 0 && val === void 0) {
+          console.error("Local value is defined, but value from server is undefined: obj == " + this.constructor.name + "[" + this.objectId + "], prop == " + name + ", oldVal = " + this[name]);
+          val = this[name];
+        }
+        _results.push(this[name] = val);
+      }
+      return _results;
+    };
+
+    ModelMixin.prototype.afterLoad = function(cb) {
+      return cb();
+    };
+
+    ModelMixin.prototype.beforeSave = function() {};
+
+    ModelMixin.prototype.getPropertyNames = function() {
+      return Object.keys(this).filter(function(k) {
+        return typeof this[k] !== 'function' && k.charAt(0) !== '_' && k.charAt(0) !== '$' && k !== 'persistence';
+      });
+    };
+
+    return ModelMixin;
+
+  })();
+
+  ParseClassMethods = function(options) {
+    if (options == null) {
+      options = {
+        linkToCurrentUser: true
+      };
+    }
+    return function(clsName, cls, addInstanceMethods) {
+      var ParseClass, parseClassName, _ref;
+      parseClassName = (_ref = cls.PARSE_CLASS) != null ? _ref : clsName;
+      ParseClass = Parse.Object.extend(parseClassName);
+      return {
+        find: function(data, options) {
+          if (data == null) {
+            data = {};
+          }
+          if (options == null) {
+            options = {};
+          }
+          return ParseUtils.find(parseClassName, data, {
+            success: options.success,
+            error: options.error,
+            processItem: function(item) {
+              var o;
+              o = new cls();
+              addInstanceMethods(o, item);
+              o.load(item.toJSON());
+              return o;
+            },
+            postProcessItem: function(item, cb) {
+              return item.afterLoad(cb);
+            }
+          });
+        },
+        init: function(obj) {
+          var parseObj;
+          parseObj = new ParseClass();
+          parseObj.setACL(new Parse.ACL(Parse.User.current()));
+          return addInstanceMethods(obj, parseObj);
+        }
+      };
+    };
+  };
+
+  parseSetAll = function(parseObj, o, data) {
+    var key, prop, val, _i, _len, _ref, _ref1, _results;
+    if (data) {
+      for (key in data) {
+        val = data[key];
+        o[key] = val;
+      }
+    }
+    _ref = o.getPropertyNames().concat(["objectId"]);
+    _results = [];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      prop = _ref[_i];
+      if (typeof o[prop] === 'number') {
+        _results.push(parseObj.increment(prop, o[prop] - ((_ref1 = parseObj.get(prop)) != null ? _ref1 : 0)));
+      } else if (o[prop] === '@currentUser') {
+        _results.push(parseObj.set(prop, Parse.User.current()));
+      } else if (o[prop] instanceof ModelMixin) {
+        if (!o[prop].objectId) {
+          throw new Error("Refered object " + prop + " shall be saved first");
+        }
+        _results.push(parseObj.set(prop, o[prop].objectId));
+      } else {
+        _results.push(parseObj.set(prop, o[prop]));
+      }
+    }
+    return _results;
+  };
+
+  ParseInstanceMethods = function(saver) {
+    if (saver == null) {
+      saver = parseSaver();
+    }
+    return function(parseObj) {
+      return {
+        save: function(o, options) {
+          var key, p, p2, saverMethod;
+          saverMethod = options.now ? 'saveNow' : 'save';
+          if (options.safe) {
+            key = Object.keys(options.data)[0];
+            o[key] = options.data[key];
+            saver.flush();
+            p = ParseUtils.setSafe(parseObj, key, options.data[key], options.success, options.error);
+          } else {
+            parseSetAll(parseObj, o, options.data);
+            p = saver[saverMethod](parseObj, options);
+          }
+          p2 = new Parse.Promise();
+          p.then((function(res) {
+            return p2.resolve(res.toJSON());
+          }), function(error) {
+            return p2.reject(error);
+          });
+          return p2;
+        }
+      };
+    };
+  };
+
+  ParseNowriteInstanceMethods = function() {
+    return function(parseObj) {
+      var id;
+      id = 1;
+      return {
+        save: function(o, options) {
+          var p;
+          if (!o.objectId) {
+            o.objectId = "" + o.constructor.name + "-" + (id++);
+          }
+          parseSetAll(parseObj, o, options.data);
+          console.log("Save " + o.constructor.name + " / " + o.objectId + " = " + (JSON.stringify(parseObj.attributes)));
+          p = new Parse.Promise();
+          p._thenRunCallbacks(options);
+          p.resolve(o);
+          return p;
+        }
+      };
+    };
+  };
+
+  MemClassMethods = function() {
+    return function(clsName, cls, addInstanceMethods) {
+      var memStorage, _memStorage;
+      _memStorage = {};
+      memStorage = function(clsName) {
+        if (_memStorage[clsName] == null) {
+          _memStorage[clsName] = [];
+        }
+        return _memStorage[clsName];
+      };
+      return {
+        find: function(data, options) {
+          var p;
+          p = new Parse.Promise();
+          p._thenRunCallbacks(options);
+          p.resolve(memStorage(clsName).filter(function(obj) {
+            var name, val;
+            for (name in data) {
+              val = data[name];
+              if (obj[name] !== val && val !== "@currentUser") {
+                return false;
+              }
+            }
+            return true;
+          }));
+          return p;
+        },
+        init: function(o) {
+          return addInstanceMethods(o, clsName, memStorage);
+        }
+      };
+    };
+  };
+
+  MemInstanceMethods = function() {
+    return function(clsName, memStorage) {
+      return {
+        save: function(o, options) {
+          var n, p, v, _ref, _ref1;
+          _ref1 = (_ref = options.data) != null ? _ref : {};
+          for (n in _ref1) {
+            v = _ref1[n];
+            o[n] = v;
+          }
+          if (!o.objectId) {
+            o.objectId = clsName + new Date().getTime();
+            memStorage(clsName).push(o);
+          }
+          p = new Parse.Promise();
+          p._thenRunCallbacks(options);
+          p.resolve(o);
+          return p;
+        }
+      };
+    };
+  };
+
+  createMixin = function(mixinName, classMethods, instanceMethods) {
+    var doMixin;
+    doMixin = function(clsName, cls) {
+      var addInstanceMethods, classes, method, mname, _ref, _results;
+      if (typeof clsName === 'object') {
+        classes = clsName;
+        for (clsName in classes) {
+          cls = classes[clsName];
+          doMixin(clsName, cls);
+        }
+        return;
+      }
+      addInstanceMethods = function() {
+        var args, mixin, obj;
+        obj = arguments[0], args = 2 <= arguments.length ? __slice.call(arguments, 1) : [];
+        mixin = instanceMethods.apply(null, args);
+        return obj[mixinName] = function() {
+          return mixin;
+        };
+      };
+      _ref = classMethods(clsName, cls, addInstanceMethods);
+      _results = [];
+      for (mname in _ref) {
+        method = _ref[mname];
+        _results.push(cls[mname] = method);
+      }
+      return _results;
+    };
+    return doMixin;
+  };
+
+  ModelMixin.parseMixin = createMixin("persistence", ParseClassMethods(), ParseInstanceMethods());
+
+  ModelMixin.parseBgMixin = createMixin("persistence", ParseClassMethods(), ParseInstanceMethods(parseBgSaver({
+    delay: 2000
+  })));
+
+  ModelMixin.parseReadonlyMixin = createMixin("persistence", ParseClassMethods(), ParseNowriteInstanceMethods());
+
+  ModelMixin.memMixin = createMixin("persistence", MemClassMethods(), MemInstanceMethods());
+
+  this.require = false;
+
+  if (require) {
+    module.exports = ModelMixin;
+  } else {
+    window.ModelMixin = ModelMixin;
+  }
+
+}).call(this);
+
+},{}],7:[function(require,module,exports){
+(function() {
+  var BOOKED, Budget, Group, ModelMixin, Project, Task, copy,
+    __hasProp = {}.hasOwnProperty,
+    __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
+
+  this.require = false;
+
+  if (require) {
+    ModelMixin = require('./persistence');
+  } else {
+    ModelMixin = window.ModelMixin;
+  }
+
+  copy = function(props) {
+    var key, o, val;
+    o = {};
+    for (key in props) {
+      if (!__hasProp.call(props, key)) continue;
+      val = props[key];
+      o[key] = val;
+    }
+    return o;
+  };
+
+  Group = (function() {
+    function Group(name, budget) {
+      this.name = name;
+      this.budget = budget;
+    }
+
+    Group.prototype.include = function(task) {
+      return (task.groups != null) && task.groups.indexOf(this.name) > -1;
+    };
+
+    Group.prototype.tasks = function() {
+      var _this = this;
+      return this.budget.tasks.filter(function(t) {
+        return t.completed === 0 && t.deleted === 0 && _this.include(t);
+      });
+    };
+
+    Group.prototype.amount = function() {
+      return this.tasks(this.budget).map(function(t) {
+        return t.cost;
+      }).reduce((function(a, b) {
+        return a + b;
+      }), 0);
+    };
+
+    Group.prototype.toggle = function(task) {
+      if (this.include(task)) {
+        task.groups.splice(task.groups.indexOf(this.name), 1);
+      } else {
+        task.groups.push(this.name);
+      }
+      return task.save();
+    };
+
+    return Group;
+
+  })();
+
+  Task = (function(_super) {
+    __extends(Task, _super);
+
+    Task.properties("title", "completed", "deleted", "cMonth", "cYear", "cProjectName", "project", "cost", "budget", "groups", "amount");
+
+    function Task(data) {
+      if (data == null) {
+        data = {};
+      }
+      Task.init(this);
+      this.load(data);
+      this.deleted = 0;
+      this.completed = 0;
+      this.afterLoad();
+    }
+
+    Task.prototype._checkCost = function() {
+      this.cost = parseInt(this.cost);
+      if (isNaN(this.cost)) {
+        this.cost = 0;
+      }
+      this.amount = parseInt(this.amount);
+      if (isNaN(this.amount) || this.amount < 1) {
+        return this.amount = 1;
+      }
+    };
+
+    Task.prototype.afterLoad = function(cb) {
+      if (cb == null) {
+        cb = function() {};
+      }
+      this._checkCost();
+      if (this.amount == null) {
+        this.amount = 1;
+      }
+      if (this.groups == null) {
+        this.groups = [];
+      }
+      this.updateStatus();
+      return cb();
+    };
+
+    Task.prototype.withBudget = function(cb) {
+      if (typeof this.budget === 'object') {
+        return cb(this.budget);
+      }
+    };
+
+    Task.prototype.withStatusUpdate = function(cb) {
+      cb(this);
+      return this.updateStatus();
+    };
+
+    Task.prototype.updateStatus = function() {
+      var _this = this;
+      this._checkCost();
+      if (this.completed === 1) {
+        return this.status = 'completed';
+      } else {
+        return this.withBudget(function(b) {
+          return _this.status = b.getStatusForCost(_this.cost);
+        });
+      }
+    };
+
+    Task.prototype.toggle = function() {
+      if (this.completed === 1) {
+        return this.uncomplete();
+      } else {
+        return this.complete();
+      }
+    };
+
+    Task.prototype.is = function(status) {
+      return status === this.status;
+    };
+
+    Task.prototype.complete = function() {
+      var p,
+        _this = this;
+      if (this.completed === 1) {
+        return;
+      }
+      p = new Parse.Promise();
+      this.withBudget(function(b) {
+        return b.onComplete(_this);
+      });
+      this.save({
+        completed: 1
+      }, {
+        safe: true,
+        success: function() {
+          var comDate;
+          comDate = new Date();
+          return _this.save({
+            cMonth: comDate.getMonth(),
+            cYear: comDate.getFullYear(),
+            cProjectName: _this.project.name
+          });
+        },
+        error: function(err) {
+          if (err.conflict) {
+            return _this.withBudget(function(b) {
+              return b.onUncomplete(_this);
+            });
+          }
+        }
+      });
+      this.updateStatus();
+      return p;
+    };
+
+    Task.prototype.uncomplete = function() {
+      var p,
+        _this = this;
+      if (this.completed === 0) {
+        return;
+      }
+      this.withBudget(function(b) {
+        return b.onUncomplete(_this);
+      });
+      p = this.save({
+        completed: 0
+      }, {
+        safe: true,
+        success: function() {},
+        error: function(err) {
+          return _this.withBudget(function(b) {
+            if (err.conflict) {
+              return b.onComplete(_this);
+            }
+          });
+        }
+      });
+      this.updateStatus();
+      return p;
+    };
+
+    Task.prototype["delete"] = function() {
+      return this.save({
+        deleted: 1
+      }, {
+        safe: true
+      });
+    };
+
+    return Task;
+
+  })(ModelMixin);
+
+  BOOKED = "booked";
+
+  Budget = (function(_super) {
+    __extends(Budget, _super);
+
+    Budget.properties("amount", "owner", "currency");
+
+    function Budget(_arg) {
+      this.amount = (_arg != null ? _arg : {}).amount;
+      Budget.init(this);
+      this.tasks = [];
+      this.booked = new Group(BOOKED, this);
+      this.owner = "@currentUser";
+    }
+
+    Budget.prototype.linkRelation = function(fieldName) {
+      var _this = this;
+      return function(obj) {
+        return obj[fieldName] = function(act) {
+          return act(_this);
+        };
+      };
+    };
+
+    Budget.prototype.afterLoad = function(cb) {
+      var _this = this;
+      if (this.currency == null) {
+        this.currency = 'RUR';
+      }
+      return Task.find({
+        budget: this.objectId,
+        deleted: 0
+      }, {
+        success: function(tasks) {
+          tasks.forEach(function(t) {
+            t.budget = _this;
+            return t.updateStatus();
+          });
+          return _this.tasks = tasks;
+        },
+        error: function() {}
+      }).then(function() {
+        return Project.find({
+          budget: _this.objectId,
+          deleted: 0
+        }, {
+          success: function(projects) {
+            projects.forEach(function(p) {
+              return p.budget = _this;
+            });
+            _this.projects = projects;
+            _this._linkProjectsTasks();
+            return cb();
+          }
+        });
+      });
+    };
+
+    Budget.prototype._linkProjectsTasks = function() {
+      var pid,
+        _this = this;
+      pid = {};
+      this.projects.forEach(function(p) {
+        return pid[p.objectId] = p;
+      });
+      return this.tasks = this.tasks.filter(function(t) {
+        var project;
+        if (!t.project) {
+          console.error("Task does not have link to project, so it will be ignored");
+          return false;
+        }
+        if (!pid[t.project]) {
+          console.error("Project with id = " + t.project + " does not belong to this budget");
+          return false;
+        }
+        project = pid[t.project];
+        t.project = project;
+        project.attachTask(t);
+        return true;
+      });
+    };
+
+    Budget.prototype.isEnough = function(task) {
+      return task.cost <= this.amount;
+    };
+
+    Budget.prototype.getStatusForCost = function(cost) {
+      if (this.isEnough({
+        cost: cost
+      })) {
+        return 'available';
+      } else {
+        return 'unavailable';
+      }
+    };
+
+    Budget.prototype.report = function(month, year) {
+      var report;
+      report = {
+        loading: true,
+        tasks: []
+      };
+      Task.find({
+        budget: this.objectId,
+        completed: 1,
+        cMonth: month,
+        cYear: year
+      }, {
+        success: function(tasks) {
+          report.loading = false;
+          return report.tasks = tasks;
+        },
+        error: function() {}
+      });
+      return report;
+    };
+
+    Budget.prototype.set = function(amount, force) {
+      var newAmount;
+      if (force == null) {
+        force = false;
+      }
+      newAmount = parseInt(amount);
+      if (this.amount === void 0) {
+        this.amount = amount;
+      }
+      if (this.amount === newAmount) {
+        return;
+      }
+      this.save({
+        amount: newAmount
+      }, {
+        now: force
+      });
+      return this.updateStatuses();
+    };
+
+    Budget.prototype.onComplete = function(task) {
+      return this.set(this.amount - task.cost);
+    };
+
+    Budget.prototype.onUncomplete = function(task) {
+      return this.set(this.amount + task.cost);
+    };
+
+    Budget.prototype.updateStatuses = function(container) {
+      var _this = this;
+      if (container == null) {
+        container = this;
+      }
+      return container.tasks.forEach(function(t) {
+        return t.updateStatus();
+      });
+    };
+
+    Budget.prototype.addProject = function(props, cb) {
+      var project,
+        _this = this;
+      if (cb == null) {
+        cb = function() {};
+      }
+      props = copy(props);
+      props.budget = this;
+      project = new Project(props);
+      project.save().then((function(project) {
+        project.budget = _this;
+        _this.projects.push(project);
+        return cb(null, project);
+      }), function(err) {
+        return cb(err);
+      });
+      return project;
+    };
+
+    Budget.prototype.getProject = function(id) {
+      var _ref;
+      return (_ref = this.projects.filter(function(p) {
+        return p.objectId === id;
+      })[0]) != null ? _ref : null;
+    };
+
+    Budget.prototype.deleteProject = function(proj) {
+      return this.projects.splice(this.projects.indexOf(proj), 1);
+    };
+
+    Budget.prototype.addTask = function(props, cb) {
+      var task,
+        _this = this;
+      if (cb == null) {
+        cb = function() {};
+      }
+      props = copy(props);
+      props.budget = this;
+      task = new Task(props);
+      this.tasks.push(task);
+      task.project.tasks.push(task);
+      task.save().then((function(task) {
+        _this.linkRelation("withBudget")(task);
+        _this.updateStatuses(props.updateStatusesFor);
+        return cb(null, task);
+      }), function(err) {
+        return cb(err);
+      });
+      return task;
+    };
+
+    Budget.load = function(cb) {
+      return Budget.find({
+        owner: "@currentUser"
+      }, {
+        success: function(budgets) {
+          if (budgets.length > 0) {
+            return cb(null, budgets[0]);
+          } else {
+            return new Budget({
+              amount: 0
+            }).save().then((function(b) {
+              return cb(null, b);
+            }), function(err) {
+              return cb(err);
+            });
+          }
+        },
+        error: function(_, e) {
+          return cb(e);
+        }
+      });
+    };
+
+    return Budget;
+
+  })(ModelMixin);
+
+  Project = (function(_super) {
+    __extends(Project, _super);
+
+    Project.PARSE_CLASS = "Project2";
+
+    Project.properties("name", "deleted", "budget");
+
+    function Project(_arg) {
+      var _ref;
+      _ref = _arg != null ? _arg : {}, this.name = _ref.name, this.budget = _ref.budget;
+      Project.init(this);
+      this.deleted = 0;
+      this.tasks = [];
+    }
+
+    Project.prototype.attachTask = function(task) {
+      return this.tasks.push(task);
+    };
+
+    Project.prototype.nonDeleted = function() {
+      return this.tasks.filter(function(t) {
+        return !t.deleted;
+      });
+    };
+
+    Project.prototype.completed = function() {
+      return this.tasks.filter(function(t) {
+        return t.status === 'completed';
+      });
+    };
+
+    Project.prototype.nonCompleted = function() {
+      return this.tasks.filter(function(t) {
+        return t.status !== 'completed';
+      });
+    };
+
+    Project.prototype.available = function() {
+      return this.tasks.filter(function(t) {
+        return t.status === 'available';
+      });
+    };
+
+    Project.prototype.unavailable = function() {
+      return this.tasks.filter(function(t) {
+        return t.status === 'unavailable';
+      });
+    };
+
+    Project.prototype.addTask = function(props, cb) {
+      props = copy(props);
+      props.project = this;
+      return this.budget.addTask(props, cb);
+    };
+
+    Project.prototype.deleteTask = function(task) {
+      var p;
+      p = task["delete"]();
+      this.tasks.splice(this.tasks.indexOf(task), 1);
+      return p;
+    };
+
+    Project.prototype["delete"] = function() {
+      var p;
+      p = this.save({
+        deleted: 1
+      }, {
+        safe: true
+      });
+      this.budget.deleteProject(this);
+      return p;
+    };
+
+    return Project;
+
+  })(ModelMixin);
+
+  ModelMixin.parseMixin({
+    Task: Task,
+    Budget: Budget,
+    Project: Project
+  });
+
+  if (require) {
+    module.exports = {
+      Budget: Budget,
+      remix: function(mixin) {
+        return mixin({
+          Task: Task,
+          Budget: Budget,
+          Project: Project
+        });
+      }
+    };
+  } else {
+    window.Budget = Budget;
+    window.Task = Task;
+    window.Project = Project;
+  }
+
+}).call(this);
+
+},{"./persistence":6}],8:[function(require,module,exports){
+(function() {
+  var Budget, ModelMixin, remix, _ref,
+    __slice = [].slice;
+
+  _ref = require('./tasks'), Budget = _ref.Budget, remix = _ref.remix;
+
+  ModelMixin = require('./persistence');
+
+  module.exports = function(app) {
+    app.run(function($rootScope, $timeout) {
+      var apply, counter, oldAjax;
+      oldAjax = Parse._ajax;
+      counter = 0;
+      apply = function() {
+        counter--;
+        if (counter <= 0) {
+          counter = 0;
+          return $timeout(function() {
+            $rootScope.$apply();
+            return console.log("applied after Parse call");
+          });
+        }
+      };
+      return Parse._ajax = function() {
+        var args, p;
+        args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+        counter++;
+        p = oldAjax.call.apply(oldAjax, [Parse].concat(__slice.call(args)));
+        p.then(apply, apply);
+        return p;
+      };
+    });
+    return app.provider('budget', function() {
+      var mode;
+      mode = 'production';
+      remix(ModelMixin.parseBgMixin);
+      return {
+        setMode: function(_mode) {
+          mode = _mode;
+          if (mode === 'debug') {
+            console.log('switch to readonly');
+            return remix(ModelMixin.parseReadonlyMixin);
+          } else if (mode === 'local') {
+            console.log('switch to memory');
+            return remix(ModelMixin.memMixin);
+          }
+        },
+        $get: function() {
+          var budgetPromise;
+          Budget.mode = mode;
+          budgetPromise = new Parse.Promise();
+          return {
+            unload: function() {
+              return budgetPromise = new Parse.Promise();
+            },
+            load: function() {
+              Budget.load(function(err, b) {
+                if (err) {
+                  return budgetPromise.reject(err);
+                } else {
+                  return budgetPromise.resolve(b);
+                }
+              });
+              return budgetPromise;
+            },
+            whenLoad: function() {
+              return budgetPromise;
+            },
+            getStatusForCost: function(cost) {
+              return Budget.getStatusForCost(cost);
+            }
+          };
+        }
+      };
+    });
+  };
+
+}).call(this);
+
+},{"./persistence":6,"./tasks":7}],9:[function(require,module,exports){
 (function() {
   var BOTTOM, IN, LEFT, OUT, PLAIN, RIGHT, TOP, distributePartsOnPicture, drawSquareWithPattern, fitInSquare, generatePuzzle, p, puzzle, rectangle, size, splitPicture, square, _ref;
 
@@ -1190,7 +2177,7 @@
 
 }).call(this);
 
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function() {
   var c, clearPuzzlePiece, clipFigure, context, drawImageWithGrid, drawPuzzlePiece, loadImage, makePuzzlePiece, sizeToScale, toScale;
 
@@ -1324,7 +2311,7 @@
 
 }).call(this);
 
-},{"./calc":6}],8:[function(require,module,exports){
+},{"./calc":9}],11:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
     app.directive('taskSelectionList', function() {
@@ -1346,31 +2333,35 @@
               return scope.selection.deselectAll();
             }
           };
-          return scope.$watch("selection", function() {
+          return scope.$watch(scope.selection.$watch(), function() {
             scope.taskBooked = scope.selection.isBooked();
             return scope.task = scope.selection.getSelectionAsTask();
           }, true);
         }
       };
     });
-    return app.directive('taskActionsList', function(tasksService) {
+    return app.directive('taskActionsList', function() {
       return {
         restrict: 'E',
         replace: true,
         scope: {
-          task: "="
+          task: "=",
+          booking: "="
         },
         templateUrl: "actions.html",
         link: function(scope, el, attrs) {
           scope.options = scope.$parent.options;
           scope.toggleBooked = function() {
-            return tasksService.toggleBooking(scope.task);
+            return scope.booking.toggle(scope.task);
           };
           scope.toggleTask = function() {
-            return tasksService.toggle(scope.task);
+            return scope.task.toggle();
           };
-          return scope.$watch("task.groups", function() {
-            return scope.taskBooked = tasksService.isBooked(scope.task);
+          return scope.$watch((function() {
+            var _base;
+            return typeof (_base = scope.booking).include === "function" ? _base.include(scope.task) : void 0;
+          }), function(newVal) {
+            return scope.taskBooked = newVal;
           });
         }
       };
@@ -1379,7 +2370,7 @@
 
 }).call(this);
 
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function() {
   var Storage, parseSafe;
 
@@ -1476,16 +2467,10 @@
 
 }).call(this);
 
-},{}],10:[function(require,module,exports){
-(function() {
-
-
-}).call(this);
-
-},{}],11:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
-    app.service('tasksSelection', function(tasksService) {
+    app.service('tasksSelection', function() {
       var Selection;
       Selection = (function() {
         function Selection() {
@@ -1516,19 +2501,30 @@
 
         Selection.prototype["delete"] = function() {
           this.tasks.forEach(function(t) {
-            return tasksService.deleteTask(t);
+            return t.project.deleteTask(t);
           });
           return this.deselectAll();
         };
 
+        Selection.prototype.$watch = function() {
+          var _this = this;
+          return function() {
+            return _this.getSelectionAsTask();
+          };
+        };
+
         Selection.prototype.toggleBookingTask = function() {
-          var selectionBooked, tasksToToggle;
+          var booking, selectionBooked, tasksToToggle;
+          if (this.tasks.length === 0) {
+            return false;
+          }
+          booking = this.tasks[0].budget.booked;
           selectionBooked = this.isBooked();
           tasksToToggle = this.tasks.filter(function(t) {
-            return tasksService.isBooked(t) === selectionBooked;
+            return booking.include(t) === selectionBooked;
           });
           return tasksToToggle.forEach(function(task) {
-            return tasksService.toggleBooking(task);
+            return booking.toggle(task);
           });
         };
 
@@ -1539,22 +2535,29 @@
           });
           tasksToToggle = nonCompleted.length === 0 ? this.tasks : nonCompleted;
           return tasksToToggle.forEach(function(task) {
-            return tasksService.toggle(task);
+            return task.toggle();
           });
         };
 
         Selection.prototype.isBooked = function() {
+          var booking;
+          if (this.tasks.length === 0) {
+            return false;
+          }
+          booking = this.tasks[0].budget.booked;
           return this.tasks.every(function(t) {
-            return tasksService.isBooked(t);
+            return booking.include(t);
           });
         };
 
         Selection.prototype.getSelectionAsTask = function() {
-          var nonCompleted, task;
+          var budget, nonCompleted, task;
           nonCompleted = this.tasks.filter(function(t) {
             return !t.is("completed");
           });
-          task = {};
+          task = {
+            booked: this.isBooked()
+          };
           if (nonCompleted.length === 0) {
             task.cost = this.tasks.map(function(t) {
               return t.cost;
@@ -1564,12 +2567,13 @@
             task.status = "completed";
             task;
           } else {
+            budget = nonCompleted[0].budget;
             task.cost = nonCompleted.map(function(t) {
               return t.cost;
             }).reduce((function(a, b) {
               return a + b;
             }), 0);
-            task.status = tasksService.getStatusForCost(task.cost);
+            task.status = budget.getStatusForCost(task.cost);
           }
           return task;
         };
@@ -1603,7 +2607,7 @@
 
 }).call(this);
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 (function() {
   var Budget, EventEmitter, Group, Project, Task, TaskEvent, TasksService, clear, copyProperties, isInternal, parseString, toFloat, toJSON,
     __slice = [].slice,
@@ -2286,7 +3290,7 @@
 
 }).call(this);
 
-},{"./localStorage":9}],13:[function(require,module,exports){
+},{"./localStorage":12}],15:[function(require,module,exports){
 (function() {
   var app, drawImageWithGrid, drawPuzzlePiece, loadImage, loadPuzzle, makePuzzlePiece, splitPicture, updatePartVisibility, _ref;
 
@@ -2383,7 +3387,7 @@
 
 }).call(this);
 
-},{"./puzzle/puzzle":7}],14:[function(require,module,exports){
+},{"./puzzle/puzzle":10}],16:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
     var LANG_KEY, addZeros, getDialog, setVal, toggle;
@@ -2557,7 +3561,7 @@
     });
     app.directive('currency', function() {
       return {
-        template: "<span class='currency'>{{options.currency}}</span>",
+        template: "<span class='currency'>{{budget.currency}}</span>",
         restrict: 'E'
       };
     });
@@ -2707,5 +3711,5 @@
 
 }).call(this);
 
-},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12,13,14])
+},{}]},{},[1,2,3,4,6,5,7,8,9,10,11,13,12,14,15,16])
 ;

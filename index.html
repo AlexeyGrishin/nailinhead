@@ -21,8 +21,8 @@
             <div class="budget" title="Edit current budget" ng-show="auth.loggedIn" gr-attrs="title">
                 <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
             </div>
-            <div class="groups" ng-hide="booking.amount == 0">
-                <span gr-key>Booked</span> <currency></currency> <span title="Booked tasks total amount" countdown="booking.amount" step="500"></span>
+            <div class="groups" ng-hide="booking.amount() == 0">
+                <span gr-key>Booked</span> <currency></currency> <span gr-attrs='title' title="Booked tasks total amount" countdown="booking.amount()" step="500"></span>
             </div>
             <a href="#/">
                 <img src="img/logo.svg"/>
@@ -45,6 +45,7 @@
             <lang-selector></lang-selector>
             <strong class="user-name" gr-key>You are logged in as {{auth.currentUser.username}}</strong>
             <a class="logout link-danger" ng-click="logout()" gr-key>Logout</a>
+            <a ng-click="export()">Export</a>
 
         </div>
     </div>

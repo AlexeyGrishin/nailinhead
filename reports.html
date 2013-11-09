@@ -1,10 +1,10 @@
 <div class="top-panel reports">
-    <h3 gr-key>Report for {{year}} / {{monthR}}</h3>
+    <h3 gr-key>Report for {{year}} / {{monthR | month}}</h3>
     <div class="buttons">
-        <a class="btn btn-good" href="#/reports/{{prev.year}}/{{prev.month}}" gr-key><< Previous</a>
-        <a class="btn btn-good" href="#/reports/" gr-key>Current month</a>
-        <a class="btn btn-good" href="#/reports/{{next.year}}/{{next.month}}" ng-show="hasNext" gr-key>Next >></a>
-        <a class="btn btn-disabled" ng-hide="hasNext" gr-key>Next >></a>
+        <a class="btn btn-good" href="#/reports/{{prev.year}}/{{prev.month}}"><< {{prev.month | month}} </a> &nbsp;
+        <a class="btn btn-good" href="#/reports/" gr-key>Current month</a> &nbsp;
+        <a class="btn btn-good" href="#/reports/{{next.year}}/{{next.month}}" ng-show="hasNext">{{next.month | month}} >></a>
+        <a class="btn btn-disabled" ng-hide="hasNext">{{next.month | month}} >></a>
 
     </div>
 </div>
@@ -12,12 +12,44 @@
 <div class="loading" ng-show="report.loading" gr-key>
     Loading, please wait...
 </div>
+
+<table ng-show='!report.loading' class="report-table">
+    <tr>
+        <th></th>
+        <th ng-repeat='date in report.dates' ng-class='{current: report.currentDateIdx == $index}'>{{date.month | month}} {{date.year}}</th>
+    </tr>
+    <tr ng-repeat='proj in report.projects'>
+        <th>{{proj.name}}</th>
+        <td ng-repeat='sum in proj.sums' ng-class='{current: report.currentDateIdx == $index}'>{{sum | cost}}</td>
+    </tr>
+</table>
 <div class="empty-case" ng-show="!report.loading && report.tasks.length == 0" gr-key>
     No tasks completed in this month
 </div>
-<ul ng-show="!report.loading && report.tasks.length > 0">
-    <li ng-repeat="task in report.tasks">
-        {{task.title}}({{task.cProjectName}}) - <b>{{options.currency}} {{task.cost}}</b>
+<ul ng-show="!report.loading && report.tasks.length > 0" class="report-tasks-list">
+    <li ng-repeat="task in report.tasks | orderBy:'cProjectName'">
+        <strong>{{task.title}} <span class="tag">{{task.cProjectName}}</span></strong>
+        <span class="cost">{{task.cost | cost}}</span>
+        <div class="triangle-btn edit" ng-click="editTask(task)" title="Click to edit or delete the task" gr-attrs="title"><i></i></div>
+        <dialog-panel show-if="isInEdit(task)"
+                      class="edit-task-dialog one-line"
+                      do-not-clear-form
+                      save-button-title="Save"
+                      cancel-button-title="Close"
+                      gr-attrs="save-button-title,cancel-button-title"
+                      on-save="saveTask(task)" on-close="cancelEdit()" >
+            <label>
+                <span gr-key>Completed at:</span>
+                <select ng-model="taskInEdit.edited.cMonth">
+                    <option ng-repeat="m in months" gr-key="month{{m}}" value="{{m}}" ng-selected="m == taskInEdit.edited.cMonth"></option>
+                </select>
+            </label>
+            <label>
+                <select ng-model="taskInEdit.edited.cYear">
+                    <option ng-repeat="y in years" value="{{y}}" ng-selected="y == taskInEdit.edited.cYear">{{y}}</option>
+                </select>
+            </label>
+        </dialog-panel>
     </li>
 </ul>
 

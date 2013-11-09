@@ -508,6 +508,7 @@
         return;
       }
       $scope.selection.deselectAll();
+      $scope.addTaskDialog = false;
       $scope.taskInEdit = {
         original: task,
         edited: $.extend({}, task)
@@ -537,7 +538,7 @@
   });
 
   app.controller('reports', function(budget, $scope, $routeParams, $location) {
-    var date, month, today, year;
+    var date, month, today, year, _i, _ref, _ref1, _results;
     year = parseFloat($routeParams.year);
     month = parseFloat($routeParams.month);
     if (!isNaN(year) && isNaN(month)) {
@@ -557,7 +558,7 @@
     }
     $scope.loading = true;
     $scope.month = month;
-    $scope.monthR = month + 1;
+    $scope.monthR = month;
     $scope.year = year;
     $scope.prev = {
       month: month === 0 ? 11 : month - 1,
@@ -568,14 +569,53 @@
       year: month === 11 ? year + 1 : year
     };
     $scope.hasNext = true;
-    $scope.report = {
-      loading: true
+    $scope.loadReport = function() {
+      $scope.report = {
+        loading: true
+      };
+      return budget.whenLoad().then(function(budget) {
+        $scope.report = budget.report($scope.month, $scope.year, 2, 2);
+        $scope.hasNext = year < today.getFullYear() || month < today.getMonth();
+        return safeApply($scope);
+      });
     };
-    return budget.whenLoad().then(function(budget) {
-      $scope.report = budget.report($scope.month, $scope.year);
-      $scope.hasNext = year < today.getFullYear() || month < today.getMonth();
-      return safeApply($scope);
-    });
+    $scope.loadReport();
+    $scope.taskInEdit = {};
+    $scope.isInEdit = function(task) {
+      return $scope.taskInEdit.task === task;
+    };
+    $scope.months = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+    $scope.years = (function() {
+      _results = [];
+      for (var _i = _ref = year - 2, _ref1 = year + 1; _ref <= _ref1 ? _i <= _ref1 : _i >= _ref1; _ref <= _ref1 ? _i++ : _i--){ _results.push(_i); }
+      return _results;
+    }).apply(this);
+    $scope.editTask = function(task) {
+      if ($scope.isInEdit(task)) {
+        return $scope.cancelEdit();
+      }
+      $scope.taskInEdit.task = task;
+      return $scope.taskInEdit.edited = {
+        cMonth: task.cMonth,
+        cYear: task.cYear
+      };
+    };
+    $scope.cancelEdit = function() {
+      return $scope.taskInEdit = {};
+    };
+    return $scope.saveTask = function(task) {
+      task.cMonth = parseInt($scope.taskInEdit.edited.cMonth);
+      task.cYear = parseInt($scope.taskInEdit.edited.cYear);
+      if (isNaN(task.cMonth) || isNaN(task.cYear)) {
+        return $scope.cancelEdit();
+      }
+      task.save({}, {
+        now: true
+      }).then(function() {
+        return $scope.loadReport();
+      });
+      return $scope.cancelEdit();
+    };
   });
 
   app.filter('nonCompleted', function() {
@@ -693,7 +733,7 @@
 
 }).call(this);
 
-},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./model/tasks_angular":8,"./tasks/actions":9,"./tasks/selection":10,"./ui":11}],6:[function(require,module,exports){
+},{"./async":1,"./auth/auth":2,"./backend/parse_angular":4,"./model/tasks_angular":9,"./tasks/actions":10,"./tasks/selection":11,"./ui":12}],6:[function(require,module,exports){
 (function() {
   var BgSaver, MemClassMethods, MemInstanceMethods, ModelMixin, ParseClassMethods, ParseInstanceMethods, ParseNowriteInstanceMethods, ParseUtils, createMixin, parseBgSaver, parseSaver, parseSetAll,
     __slice = [].slice;
@@ -1209,7 +1249,153 @@
 
 },{}],7:[function(require,module,exports){
 (function() {
-  var BOOKED, Budget, Group, ModelMixin, Project, Task, copy,
+  var Report, find;
+
+  find = function(projects, name) {
+    return (projects.filter(function(p) {
+      var _ref;
+      return p.name === ((_ref = name.name) != null ? _ref : name);
+    }))[0];
+  };
+
+  Report = (function() {
+    function Report() {
+      this._projects = [];
+      this._dates = [];
+    }
+
+    Report.prototype.prependTasks = function(month, year, tasks) {
+      return this.addTasks_(month, year, tasks, 'unshift');
+    };
+
+    Report.prototype.addTasks = function(month, year, tasks) {
+      return this.addTasks_(month, year, tasks, 'push');
+    };
+
+    Report.prototype.addTasks_ = function(month, year, tasks, method) {
+      var date, proj, project, task, _i, _j, _len, _len1, _ref;
+      date = {
+        month: month,
+        year: year
+      };
+      date.projects = [];
+      for (_i = 0, _len = tasks.length; _i < _len; _i++) {
+        task = tasks[_i];
+        project = find(date.projects, task.cProjectName);
+        if (!project) {
+          project = {
+            name: task.cProjectName
+          };
+          date.projects.push(project);
+        }
+        if (project.tasks == null) {
+          project.tasks = [];
+        }
+        if (project.sum == null) {
+          project.sum = 0;
+        }
+        project.tasks.push(task);
+        project.sum += task.cost;
+      }
+      this._dates[method](date);
+      _ref = date.projects;
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        proj = _ref[_j];
+        if (!find(this._projects, proj)) {
+          this._projects.push({
+            name: proj.name
+          });
+        }
+      }
+      return this;
+    };
+
+    Report.prototype.build = function(month, year) {
+      var curDate, date, project, report, _i, _j, _k, _len, _len1, _len2, _ref, _ref1, _ref2, _ref3, _ref4;
+      report = {
+        dates: this._dates,
+        projects: this._projects,
+        tasks: [],
+        currentDateIdx: 0
+      };
+      curDate = this._dates.filter(function(d) {
+        return d.month === month && d.year === year;
+      })[0];
+      report.currentDateIdx = this._dates.indexOf(curDate);
+      _ref1 = (_ref = curDate != null ? curDate.projects : void 0) != null ? _ref : [];
+      for (_i = 0, _len = _ref1.length; _i < _len; _i++) {
+        project = _ref1[_i];
+        report.tasks = report.tasks.concat(project.tasks);
+      }
+      _ref2 = report.projects;
+      for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
+        project = _ref2[_j];
+        project.sums = [];
+        _ref3 = report.dates;
+        for (_k = 0, _len2 = _ref3.length; _k < _len2; _k++) {
+          date = _ref3[_k];
+          project.sums.push(((_ref4 = find(date.projects, project)) != null ? _ref4.sum : void 0));
+        }
+      }
+      return report;
+    };
+
+    return Report;
+
+  })();
+
+  this.require = false;
+
+  if (require) {
+    module.exports = Report;
+  } else {
+    window.Report = Report;
+  }
+
+  window.dateUtils = {
+    nextMonth: function(d, count) {
+      var i, res, _i;
+      if (count == null) {
+        count = 1;
+      }
+      res = {
+        month: d.month,
+        year: d.year
+      };
+      for (i = _i = 1; 1 <= count ? _i <= count : _i >= count; i = 1 <= count ? ++_i : --_i) {
+        res.month++;
+        if (res.month >= 12) {
+          res.month = 0;
+          res.year++;
+        }
+      }
+      return res;
+    },
+    prevMonth: function(d, count) {
+      var i, res, _i;
+      if (count == null) {
+        count = 1;
+      }
+      res = {
+        month: d.month,
+        year: d.year
+      };
+      for (i = _i = 1; 1 <= count ? _i <= count : _i >= count; i = 1 <= count ? ++_i : --_i) {
+        res.month--;
+        if (res.month < 0) {
+          res.month = 11;
+          res.year--;
+        }
+      }
+      return res;
+    }
+  };
+
+}).call(this);
+
+},{}],8:[function(require,module,exports){
+(function() {
+  var BOOKED, Budget, Group, ModelMixin, Project, Report, Task, copy,
     __hasProp = {}.hasOwnProperty,
     __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor(); child.__super__ = parent.prototype; return child; };
 
@@ -1217,8 +1403,10 @@
 
   if (require) {
     ModelMixin = require('./persistence');
+    Report = require('./report');
   } else {
     ModelMixin = window.ModelMixin;
+    Report = window.Report;
   }
 
   copy = function(props) {
@@ -1516,23 +1704,51 @@
       }
     };
 
-    Budget.prototype.report = function(month, year) {
-      var report;
+    Budget.prototype.report = function(month, year, monthsBefore, monthsAfter) {
+      var builder, getTasks, report, startFrom,
+        _this = this;
+      if (monthsBefore == null) {
+        monthsBefore = 0;
+      }
+      if (monthsAfter == null) {
+        monthsAfter = 0;
+      }
       report = {
-        loading: true,
-        tasks: []
+        loading: true
       };
-      Task.find({
-        budget: this.objectId,
-        completed: 1,
-        cMonth: month,
-        cYear: year
-      }, {
-        success: function(tasks) {
-          report.loading = false;
-          return report.tasks = tasks;
-        },
-        error: function() {}
+      getTasks = function(month, year, reportBuilder, prevMonth, cb) {
+        return Task.find({
+          budget: _this.objectId,
+          completed: 1,
+          cMonth: month,
+          cYear: year
+        }).then(function(tasks) {
+          reportBuilder.prependTasks(month, year, tasks);
+          if (prevMonth > 0) {
+            month--;
+            if (month < 0) {
+              month = 11;
+              year--;
+            }
+            return getTasks(month, year, reportBuilder, prevMonth - 1, cb);
+          } else {
+            return cb(reportBuilder);
+          }
+        }, function(error) {});
+      };
+      builder = new Report();
+      startFrom = dateUtils.nextMonth({
+        month: month,
+        year: year
+      }, monthsAfter);
+      getTasks(startFrom.month, startFrom.year, builder, monthsBefore + monthsAfter, function() {
+        var r;
+        r = builder.build(month, year);
+        report.tasks = r.tasks;
+        report.currentDateIdx = r.currentDateIdx;
+        report.dates = r.dates;
+        report.projects = r.projects;
+        return report.loading = false;
       });
       return report;
     };
@@ -1755,7 +1971,7 @@
 
 }).call(this);
 
-},{"./persistence":6}],8:[function(require,module,exports){
+},{"./persistence":6,"./report":7}],9:[function(require,module,exports){
 (function() {
   var Budget, ModelMixin, remix, _ref,
     __slice = [].slice;
@@ -1835,7 +2051,7 @@
 
 }).call(this);
 
-},{"./persistence":6,"./tasks":7}],9:[function(require,module,exports){
+},{"./persistence":6,"./tasks":8}],10:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
     app.directive('taskSelectionList', function() {
@@ -1894,7 +2110,7 @@
 
 }).call(this);
 
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
     app.service('tasksSelection', function() {
@@ -2034,10 +2250,10 @@
 
 }).call(this);
 
-},{}],11:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 (function() {
   module.exports = function(app) {
-    var LANG_KEY, addZeros, getDialog, setVal, toggle;
+    var LANG_KEY, MAX_STEPS, addZeros, formatCost, getDialog, setVal, toggle;
     setVal = function(scope, name, val) {
       var act;
       act = function() {
@@ -2212,6 +2428,7 @@
         restrict: 'E'
       };
     });
+    MAX_STEPS = 100;
     app.directive('countdown', function() {
       return function(scope, el, attrs) {
         var inFocus, setElVal, target, to, val;
@@ -2223,7 +2440,7 @@
           if (el.is("input")) {
             return el.val(val);
           } else {
-            return el.text(val + "");
+            return el.html(formatCost(val, '&nbsp;') + "");
           }
         };
         el.on('focus', function() {
@@ -2232,7 +2449,7 @@
           return inFocus = false;
         });
         return scope.$watch(attrs.countdown, function(newVal) {
-          var doStep;
+          var doStep, step, _ref;
           clearTimeout(to);
           if (inFocus) {
             return;
@@ -2242,8 +2459,11 @@
             target = 0;
           }
           el.addClass("start-counting");
+          step = (_ref = scope.$eval(attrs.step)) != null ? _ref : 1;
+          while ((Math.abs(target - val) / step) > MAX_STEPS) {
+            step = step * 2;
+          }
           doStep = function() {
-            var step, _ref;
             if (inFocus) {
               val = target;
             }
@@ -2252,7 +2472,6 @@
               setElVal(target);
               return;
             }
-            step = (_ref = scope.$eval(attrs.step)) != null ? _ref : 1;
             if (target > val) {
               val += step;
               if (val > target) {
@@ -2275,6 +2494,7 @@
       return function(scope, el, attrs) {
         return el.tooltip({
           placement: "right",
+          html: true,
           title: function() {
             return attrs.uiTitle;
           }
@@ -2289,43 +2509,51 @@
       }
       return str;
     };
+    formatCost = function(input, separator) {
+      var div, parts, rem;
+      if (separator == null) {
+        separator = ' ';
+      }
+      parts = [];
+      div = parseFloat(input);
+      if (isNaN(div)) {
+        div = 0;
+      }
+      if (div === 0) {
+        return 0;
+      }
+      while (div > 0) {
+        rem = div % 1000;
+        div = div / 1000 | 0;
+        parts.unshift(div > 0 ? addZeros(rem, 3) : rem);
+      }
+      return parts.join(separator);
+    };
     app.filter('cost', function() {
+      return formatCost;
+    });
+    app.filter('month', function(grService) {
       return function(input) {
-        var div, parts, rem;
-        parts = [];
-        div = parseFloat(input);
-        if (isNaN(div)) {
-          div = 0;
-        }
-        if (div === 0) {
-          return 0;
-        }
-        while (div > 0) {
-          rem = div % 1000;
-          div = div / 1000 | 0;
-          parts.unshift(div > 0 ? addZeros(rem, 3) : rem);
-        }
-        return parts.join(' ');
+        return grService.compile("month" + input);
       };
     });
     LANG_KEY = 'NIH_language';
-    app.directive('langSelector', function(grService) {
+    app.directive('langSelector', function($rootScope, grService) {
+      var _ref;
+      $rootScope.currentLanguage = (_ref = localStorage[LANG_KEY]) != null ? _ref : grService.originalLanguage;
+      $rootScope.$on('gr-lang-changed', function(e, lang) {
+        $rootScope.currentLanguage = lang;
+        return localStorage[LANG_KEY] = lang;
+      });
       return {
         replace: true,
         restrict: 'E',
         templateUrl: 'partial/language-selector.html',
         link: function(scope, el, attrs) {
-          var _ref;
           scope.languages = ['en', 'ru'];
-          scope.$on('gr-lang-changed', function(e, lang) {
-            scope.currentLanguage = lang;
-            return localStorage[LANG_KEY] = lang;
-          });
-          scope.currentLanguage = grService.language;
-          scope.changeLanguage = function(lang) {
+          return scope.changeLanguage = function(lang) {
             return grService.setLanguage(lang);
           };
-          return grService.setLanguage((_ref = localStorage[LANG_KEY]) != null ? _ref : grService.language);
         }
       };
     });
@@ -2361,5 +2589,5 @@
 
 }).call(this);
 
-},{}]},{},[1,2,3,5,6,4,8,7,9,10,11])
+},{}]},{},[1,2,3,4,5,6,7,8,9,10,11,12])
 ;

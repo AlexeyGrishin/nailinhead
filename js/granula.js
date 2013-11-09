@@ -112,27 +112,36 @@
           setLanguage: function(lang) {
             var loadAsync, loadSync, _ref,
               _this = this;
-            if (lang === this.language) {
+            if (lang === this.language && !asyncLoaders[lang]) {
               return;
             }
             if ((_ref = asyncLoaders[lang]) != null ? _ref.loading : void 0) {
               return;
             }
+            this._loading = lang;
             loadAsync = function(onLoad) {
               $rootScope.$broadcast('gr-lang-load', lang);
-              asyncLoaders[lang].loading = true;
-              return asyncLoaders[lang](function(error, data) {
-                if (error) {
-                  console.error(error);
-                  return $rootScope.$broadcast('gr-lang-load-error', error);
-                } else {
-                  _this.register(lang, data);
-                  delete asyncLoaders[lang];
-                  return onLoad();
-                }
+              asyncLoaders[lang].loading = asyncLoaders[lang].length;
+              return asyncLoaders[lang].forEach(function(loader) {
+                return loader(function(error, data) {
+                  if (error) {
+                    console.error(error);
+                    return $rootScope.$broadcast('gr-lang-load-error', error);
+                  } else {
+                    _this.register(lang, data);
+                    asyncLoaders[lang].loading--;
+                    if (asyncLoaders[lang].loading === 0) {
+                      delete asyncLoaders[lang];
+                      return onLoad();
+                    }
+                  }
+                });
               });
             };
             loadSync = function() {
+              if (lang !== _this._loading) {
+                return;
+              }
               _this.language = lang;
               return $rootScope.$broadcast('gr-lang-changed', lang);
             };
@@ -149,7 +158,10 @@
               throw new Error("language shall be defined!");
             }
             if (angular.isFunction(data_or_loader)) {
-              return asyncLoaders[language] = data_or_loader;
+              if (asyncLoaders[language] == null) {
+                asyncLoaders[language] = [];
+              }
+              return asyncLoaders[language].push(data_or_loader);
             } else {
               return granula.load(wrap(language, data_or_loader));
             }
@@ -181,6 +193,10 @@
             if (options == null) {
               options = {};
             }
+            if (angular.isObject(pattern)) {
+              options = pattern;
+              pattern = null;
+            }
             if (angular.isObject(options)) {
               angular.extend(options, {
                 language: this.language
@@ -191,11 +207,14 @@
                 language: this.language
               };
             }
+            if (asyncLoaders[options.language]) {
+              return "";
+            }
             realKey = this.toKey(options.key, pattern);
-            if (this.isOriginal()) {
+            if (this.isOriginal() && pattern) {
               this.save(realKey, pattern, options.language);
             }
-            return granula.translate(realKey, options.language, args);
+            return granula.translate(options.language, realKey, args);
           },
           compile: function(key, language, skipIfEmpty) {
             var e;
@@ -215,10 +234,12 @@
               }).apply(angularInterpolator(mapArgumentByKey(key)));
             } catch (_error) {
               e = _error;
-              if (!skipIfEmpty) {
-                throw e;
+              if (!asyncLoaders[language]) {
+                if (!skipIfEmpty) {
+                  throw e;
+                }
+                console.error(e.message, e);
               }
-              console.error(e.message, e);
               return "";
             }
           },
@@ -560,9 +581,9 @@
     escape = "\\";
     separator = ",";
     wordSeparator = /[\s,.!:;'\"-+=*%$#@{}()]/;
-    varEnd = /[\s,!:;'\"-+=*%$#@{}()]/;
+    varEnd = /[\s,!:'\"+=*%$#@{}()-]/;
     exactVarSpec = ":";
-    nearestRight = ">";
+    nearestRight = [">", "&gt;"];
     plural = function(word, suffixes, argName) {
       var fn;
       fn = preparePluralizationFn(word, suffixes);
@@ -641,7 +662,7 @@
               end++;
             }
             exactVar = str.substring(startVar, end);
-            if (exactVar === nearestRight) {
+            if (nearestRight.indexOf(exactVar) > -1) {
               argLink = {
                 next: true
               };
@@ -960,75 +981,169 @@
 
 },{}],7:[function(require,module,exports){
 (function() {
-  var normalize,
-    __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
+  var normalizationForms, pluralizationForms;
 
-  normalize = function(f1) {
-    return {
-      "with": function(f2) {
-        return {
-          pluralize: f1,
-          normalize: f2
-        };
+  pluralizationForms = [
+    {
+      plural: function(n) {
+        return (n > 1) ? 1 : 0;
+      },
+      languages: ['ach', 'ak', 'am', 'arn', 'br', 'fil', 'fr', 'gun', 'ln', 'mfe', 'mg', 'mi', 'oc', 'pt_BR', 'tg', 'ti', 'tr', 'uz', 'wa', 'zh']
+    }, {
+      plural: function(n) {
+        return (n != 1) ? 1 : 0;
+      },
+      languages: ['af', 'an', 'ast', 'az', 'bg', 'bn', 'brx', 'ca', 'da', 'de', 'doi', 'el', 'en', 'eo', 'es', 'es_AR', 'et', 'eu', 'ff', 'fi', 'fo', 'fur', 'fy', 'gl', 'gu', 'ha', 'he', 'hi', 'hne', 'hy', 'hu', 'ia', 'it', 'kn', 'ku', 'lb', 'mai', 'ml', 'mn', 'mni', 'mr', 'nah', 'nap', 'nb', 'ne', 'nl', 'se', 'nn', 'no', 'nso', 'or', 'ps', 'pa', 'pap', 'pms', 'pt', 'rm', 'rw', 'sat', 'sco', 'sd', 'si', 'so', 'son', 'sq', 'sw', 'sv', 'ta', 'te', 'tk', 'ur', 'yo']
+    }, {
+      plural: function(n) {
+        return (n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 ? 4 : 5);
+      },
+      languages: ['ar']
+    }, {
+      plural: function(n) {
+        return 0;
+      },
+      languages: ['ay', 'bo', 'cgg', 'dz', 'fa', 'id', 'ja', 'jbo', 'ka', 'kk', 'km', 'ko', 'ky', 'lo', 'ms', 'my', 'sah', 'su', 'th', 'tt', 'ug', 'vi', 'wo', 'zh']
+    }, {
+      plural: function(n) {
+        return (n%10==1 && n%100!=11 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);
+      },
+      languages: ['be', 'bs', 'hr', 'ru', 'sr', 'uk']
+    }, {
+      plural: function(n) {
+        return (n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;
+      },
+      languages: ['cs', 'sk']
+    }, {
+      plural: function(n) {
+        return n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2;
+      },
+      languages: ['csb']
+    }, {
+      plural: function(n) {
+        return (n==1) ? 0 : (n==2) ? 1 : (n != 8 && n != 11) ? 2 : 3;
+      },
+      languages: ['cy']
+    }, {
+      plural: function(n) {
+        return n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : 4;
+      },
+      languages: ['ga']
+    }, {
+      plural: function(n) {
+        return (n==1 || n==11) ? 0 : (n==2 || n==12) ? 1 : (n > 2 && n < 20) ? 2 : 3;
+      },
+      languages: ['gd']
+    }, {
+      plural: function(n) {
+        return (n%10!=1 || n%100==11) ? 1 : 0;
+      },
+      languages: ['is']
+    }, {
+      plural: function(n) {
+        return (n != 0) ? 1 : 0;
+      },
+      languages: ['jv']
+    }, {
+      plural: function(n) {
+        return (n==1) ? 0 : (n==2) ? 1 : (n == 3) ? 2 : 3;
+      },
+      languages: ['kw']
+    }, {
+      plural: function(n) {
+        return (n%10==1 && n%100!=11 ? 0 : n%10>=2 && (n%100<10 || n%100>=20) ? 1 : 2);
+      },
+      languages: ['lt']
+    }, {
+      plural: function(n) {
+        return (n%10==1 && n%100!=11 ? 0 : n != 0 ? 1 : 2);
+      },
+      languages: ['lv']
+    }, {
+      plural: function(n) {
+        return n==1 || n%10==1 ? 0 : 1;
+      },
+      languages: ['mk']
+    }, {
+      plural: function(n) {
+        return (n==0 ? 0 : n==1 ? 1 : 2);
+      },
+      languages: ['mnk']
+    }, {
+      plural: function(n) {
+        return (n==1 ? 0 : n==0 || ( n%100>1 && n%100<11) ? 1 : (n%100>10 && n%100<20 ) ? 2 : 3);
+      },
+      languages: ['mt']
+    }, {
+      plural: function(n) {
+        return (n==1 ? 0 : n%10>=2 && n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);
+      },
+      languages: ['pl']
+    }, {
+      plural: function(n) {
+        return (n==1 ? 0 : (n==0 || (n%100 > 0 && n%100 < 20)) ? 1 : 2);
+      },
+      languages: ['ro']
+    }, {
+      plural: function(n) {
+        return (n%100==1 ? 1 : n%100==2 ? 2 : n%100==3 || n%100==4 ? 3 : 0);
+      },
+      languages: ['sl']
+    }
+  ];
+
+  normalizationForms = {
+    en: function(word, suffixes) {
+      return {
+        word: word,
+        suffixes: (function() {
+          switch (suffixes.length) {
+            case 1:
+              return ["", suffixes[0]];
+            default:
+              return suffixes;
+          }
+        })()
+      };
+    },
+    ru: function(word, suffixes) {
+      var form2Suffix, singularSuffix;
+      switch (suffixes.length) {
+        case 1:
+          return {
+            word: word,
+            suffixes: ["", suffixes[0], ""]
+          };
+        case 2:
+          form2Suffix = suffixes[1];
+          singularSuffix = word.slice(-form2Suffix.length);
+          return {
+            word: word.slice(0, -singularSuffix.length),
+            suffixes: [singularSuffix].concat(suffixes)
+          };
+        default:
+          return {
+            word: word,
+            suffixes: suffixes
+          };
       }
-    };
+    }
   };
 
   module.exports = function() {
-    var pluralizationForms;
-    pluralizationForms = {
-      en: normalize(function(num) {
-        if (num === 1) {
-          return 0;
-        } else {
-          return 1;
-        }
-      })["with"](function(word, suffixes) {
-        return {
-          word: word,
-          suffixes: (function() {
-            switch (suffixes.length) {
-              case 1:
-                return ["", suffixes[0]];
-              default:
-                return suffixes;
-            }
-          })()
+    var form, lang, pluralizationRules, _i, _j, _len, _len1, _ref;
+    pluralizationRules = {};
+    for (_i = 0, _len = pluralizationForms.length; _i < _len; _i++) {
+      form = pluralizationForms[_i];
+      _ref = form.languages;
+      for (_j = 0, _len1 = _ref.length; _j < _len1; _j++) {
+        lang = _ref[_j];
+        pluralizationRules[lang] = {
+          pluralize: form.plural,
+          normalize: normalizationForms[lang]
         };
-      }),
-      ru: normalize(function(num) {
-        var _ref;
-        if (__indexOf.call([10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20], num) >= 0) {
-          return 2;
-        } else if (num % 10 === 1) {
-          return 0;
-        } else if (_ref = num % 10, __indexOf.call([2, 3, 4], _ref) >= 0) {
-          return 1;
-        }
-        return 2;
-      })["with"](function(word, suffixes) {
-        var form2Suffix, singularSuffix;
-        switch (suffixes.length) {
-          case 1:
-            return {
-              word: word,
-              suffixes: ["", suffixes[0], ""]
-            };
-          case 2:
-            form2Suffix = suffixes[1];
-            singularSuffix = word.slice(-form2Suffix.length);
-            return {
-              word: word.slice(0, -singularSuffix.length),
-              suffixes: [singularSuffix].concat(suffixes)
-            };
-          default:
-            return {
-              word: word,
-              suffixes: suffixes
-            };
-        }
-      })
-    };
+      }
+    }
     return {
       _get: function(language, options) {
         if (options == null) {
@@ -1036,20 +1151,23 @@
             useEnglishAsDefault: true
           };
         }
-        if (!pluralizationForms[language] && options.useEnglishAsDefault) {
+        if (!pluralizationRules[language] && options.useEnglishAsDefault) {
           language = "en";
         }
-        return pluralizationForms[language];
+        return pluralizationRules[language];
       },
       getPluralizeForm: function(language, value, options) {
         return this._get(language, options).pluralize(value);
       },
       normalizeForms: function(language, word, suffixes, options) {
-        var _ref;
-        return ((_ref = this._get(language, options).normalize) != null ? _ref : this._doNotNormalize)(word, suffixes);
+        var _ref1;
+        return ((_ref1 = this._get(language, options).normalize) != null ? _ref1 : this._doNotNormalize)(word, suffixes);
       },
       updatePluralization: function(language, pluralizeFn, normalizeFn) {
-        return pluralizationForms[language] = normalize(pluralizeFn)["with"](normalizeFn);
+        return pluralizationRules[language] = {
+          pluralize: pluralizeFn,
+          normalize: normalizeFn
+        };
       },
       _doNotNormalize: function(word, suffixes) {
         return {
@@ -1066,10 +1184,10 @@
         };
       },
       getLanguages: function() {
-        return Object.keys(pluralizationForms);
+        return Object.keys(pluralizationRules);
       },
       getAll: function() {
-        return pluralizationForms;
+        return pluralizationRules;
       }
     };
   };

@@ -597,7 +597,7 @@ ul.tasks-list li {
 ul.tasks-list li > strong {
   display: block;
   line-height: 50px;
-  margin-right: 263.33333333333337px;
+  margin-right: 313.3333333333333px;
   font-size: 16px;
   padding-left: 30px;
 }
@@ -694,7 +694,7 @@ section.task-actions {
   display: block;
   top: 0;
   right: 43.333333333333336px;
-  width: 210px;
+  width: 260px;
   text-align: right;
 }
 section.task-actions > div {
@@ -780,7 +780,7 @@ label.total {
   cursor: pointer;
   position: absolute;
   left: 0;
-  right: 263.33333333333337px;
+  right: 313.3333333333333px;
 }
 .selection-panel > .selection-content > strong:hover {
   background-image: url(../img/selectionAll0.svg);
@@ -876,8 +876,105 @@ label.total {
 .intro > div.login-form > form section.buttons button {
   margin-bottom: 5px;
 }
+.report-table {
+  margin-bottom: 10px;
+  margin-top: 10px;
+  font-size: 14px;
+  border-collapse: collapse;
+}
+.report-table td,
+.report-table th {
+  border: 1px #aaaaaa solid;
+  margin: 0;
+  padding: 10px;
+}
+.report-table th {
+  background: #e6e6e6;
+}
+.report-table th.current {
+  background: #e6ffe6;
+}
+.report-table td.current {
+  background: #ffffe6;
+}
+.report-tasks-list {
+  list-style: none;
+  padding-left: 0;
+}
+.report-tasks-list li {
+  min-height: 50px;
+  line-height: 50px;
+  background-color: #eee;
+  width: 100%;
+  position: relative;
+  border-bottom: 1px solid #cccccc;
+}
+.report-tasks-list li > strong {
+  display: block;
+  line-height: 50px;
+  height: 50px;
+  margin-right: 200px;
+  font-size: 16px;
+  padding-left: 30px;
+}
+.report-tasks-list li > span.tag {
+  padding-left: 10px;
+}
+.report-tasks-list li > span.cost {
+  position: absolute;
+  top: 0;
+  height: 50px;
+  right: 33.333333333333336px;
+  width: 200px;
+  font-size: 14px;
+  text-align: right;
+}
+.report-tasks-list li .triangle-btn {
+  position: absolute;
+  right: 0;
+  top: 16.666666666666664px;
+}
+.report-tasks-list li .triangle-btn.edit {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid #bfbfbf;
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+}
+.report-tasks-list li .triangle-btn.edit > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+.report-tasks-list li .triangle-btn.edit:hover {
+  width: 1px;
+}
+.report-tasks-list li .triangle-btn.edit:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
+}
+.report-tasks-list li .triangle-btn.edit i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
+@font-face {
+  font-family: 'open_sanslight';
+  src: url('OpenSans-Light-webfont.eot');
+  src: url('OpenSans-Light-webfont.eot?#iefix') format('embedded-opentype'), url('OpenSans-Light-webfont.woff') format('woff'), url('OpenSans-Light-webfont.ttf') format('truetype'), url('OpenSans-Light-webfont.svg#open_sanslight') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
+@font-face {
+  font-family: 'open_sans';
+  src: url('OpenSans-Regular-webfont.eot');
+  src: url('OpenSans-Regular-webfont.eot?#iefix') format('embedded-opentype'), url('OpenSans-Regular-webfont.woff') format('woff'), url('OpenSans-Regular-webfont.ttf') format('truetype'), url('OpenSans-Regular-webfont.svg#open_sanslight') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
 body {
-  font-family: "Segoe WP", "Verdana", sans-serif;
+  font-family: "open_sans", "Segoe WP", "Verdana", sans-serif;
   font-size: 12px;
 }
 .limited-width {
@@ -951,9 +1048,6 @@ body {
   padding: 4px 10px;
   margin-right: 10px;
 }
-.header .groups > span {
-  border-bottom: 1px dotted #36b3a0;
-}
 .header .groups .currency {
   color: #36b3a0;
   text-shadow: none;
@@ -962,10 +1056,11 @@ body {
 .header .budget {
   float: right;
   margin-right: 10px;
-  width: 120px;
+  width: 150px;
 }
 .header .budget .currency {
   padding-top: 4px;
+  max-width: 35px;
 }
 .header .budget input {
   -webkit-transition: all 0.2s ease-out;
@@ -977,7 +1072,7 @@ body {
   font-size: 18px;
   font-weight: bold;
   background: none;
-  width: 55px;
+  width: 90px;
   text-align: right;
 }
 .header .budget input.start-counting {

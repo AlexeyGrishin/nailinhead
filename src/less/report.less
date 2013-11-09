@@ -23,7 +23,7 @@
   list-style: none;
   padding-left: 0;
   li {
-    height: @taskRowHeight;
+    min-height: @taskRowHeight;
     line-height: @taskRowHeight;
     background-color: #eee;
     width: 100%;
@@ -32,6 +32,7 @@
     > strong {
       display: block;
       line-height: @taskRowHeight;
+      height: @taskRowHeight;
       margin-right: 200px;
       font-size: @fontBigger;
       padding-left: 30px;
@@ -42,11 +43,22 @@
     > span.cost {
       position: absolute;
       top: 0;
-      bottom: 0;
-      right: 20px;
+      height: @taskRowHeight;
+      right: @editButtonWidth;
       width: 200px;
       font-size: @fontBig;
       text-align: right;
+    }
+    .triangle-btn {
+      position: absolute;
+      right: 0;
+      top: @taskRowHeight - @editButtonWidth;
+      &.edit {
+        .triangle-btn(@editButtonWidth, @defPanelBg, 16px);
+        i {
+          background: url(../img/pencil_white.png) no-repeat center center
+        };
+      }
     }
   }
 }

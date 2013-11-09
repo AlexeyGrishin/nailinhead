@@ -214,11 +214,33 @@ app.controller 'reports', (budget, $scope, $routeParams, $location) ->
     year: if month == 11 then year + 1 else year
   }
   $scope.hasNext = true
-  $scope.report = {loading: true}
-  budget.whenLoad().then (budget) ->
-    $scope.report = budget.report($scope.month, $scope.year)
-    $scope.hasNext = (year < today.getFullYear() || month < today.getMonth())
-    safeApply($scope)
+  $scope.loadReport = ->
+    $scope.report = {loading: true}
+    budget.whenLoad().then (budget) ->
+      $scope.report = budget.report($scope.month, $scope.year, 2, 2)
+      $scope.hasNext = (year < today.getFullYear() || month < today.getMonth())
+      safeApply($scope)
+  $scope.loadReport()
+
+  #edit
+  $scope.taskInEdit = {}
+  $scope.isInEdit = (task) -> $scope.taskInEdit.task == task
+  $scope.months = [0..11]
+  $scope.years = [year-2..year+1]
+  $scope.editTask = (task) ->
+    return $scope.cancelEdit() if $scope.isInEdit(task)
+    $scope.taskInEdit.task = task
+    $scope.taskInEdit.edited = {cMonth: task.cMonth, cYear: task.cYear}
+
+  $scope.cancelEdit = ->
+    $scope.taskInEdit = {}
+  $scope.saveTask = (task) ->
+    task.cMonth = parseInt($scope.taskInEdit.edited.cMonth)
+    task.cYear = parseInt($scope.taskInEdit.edited.cYear)
+    return $scope.cancelEdit() if isNaN(task.cMonth) || isNaN(task.cYear)
+    task.save({}, {now: true}).then ->
+      $scope.loadReport()
+    $scope.cancelEdit()
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->

@@ -152,7 +152,8 @@ class Budget extends ModelMixin
     if @isEnough({cost}) then 'available' else 'unavailable'
 
 
-  report: (month, year) ->
+
+  report: (month, year, monthsBefore = 0, monthsAfter = 0) ->
     report = {loading:true}
     getTasks = (month, year, reportBuilder, prevMonth, cb) =>
       Task.find(budget: @objectId, completed: 1, cMonth:month, cYear: year).then (tasks) ->
@@ -167,9 +168,11 @@ class Budget extends ModelMixin
           cb(reportBuilder)
       , (error) -> #error
     builder = new Report()
-    getTasks month, year, builder, 2, ->
+    startFrom = dateUtils.nextMonth({month,year}, monthsAfter)
+    getTasks startFrom.month, startFrom.year, builder, monthsBefore + monthsAfter, ->
       r = builder.build(month, year)
       report.tasks = r.tasks
+      report.currentDateIdx = r.currentDateIdx
       report.dates = r.dates
       report.projects = r.projects
       report.loading = false

@@ -32,9 +32,12 @@ class Report
     report = {
       dates: @_dates,
       projects: @_projects,
-      tasks: []
+      tasks: [],
+      currentDateIdx: 0
     }
-    for project in @_dates.filter((d)->d.month == month && d.year == year)[0]?.projects ? []
+    curDate = @_dates.filter((d)->d.month == month && d.year == year)[0]
+    report.currentDateIdx = @_dates.indexOf(curDate)
+    for project in curDate?.projects ? []
       report.tasks = report.tasks.concat(project.tasks)
     for project in report.projects
       project.sums = []
@@ -48,3 +51,21 @@ if require
   module.exports = Report
 else
   window.Report = Report
+
+window.dateUtils =
+  nextMonth: (d, count = 1) ->
+    res = {month:d.month, year:d.year}
+    for i in [1..count]
+      res.month++
+      if res.month >= 12
+        res.month = 0
+        res.year++
+    res
+  prevMonth: (d, count = 1) ->
+    res = {month:d.month, year:d.year}
+    for i in [1..count]
+      res.month--
+      if res.month < 0
+        res.month = 11
+        res.year--
+    res

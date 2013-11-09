@@ -24,7 +24,7 @@
                 <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
             </div>
             <div class="groups" ng-hide="!booking.amount()">
-                <span gr-key>Booked</span> <currency></currency> <span gr-attrs='title' title="Booked tasks total amount" countdown="booking.amount()" step="500"></span>
+                (<span gr-attrs='title' title="Booked tasks total amount" countdown="booking.amount()" step="500"></span> <span gr-key> booked</span>)
             </div>
             <a href="#/">
                 <img src="img/logo.svg"/>

@@ -340,12 +340,30 @@
   });
 
   app.controller('header', function($scope) {
-    return $scope.$watch('budget.amount', function(newVal) {
+    $scope.$watch('budget.amount', function(newVal) {
       if (!$scope.auth.loggedIn) {
         return;
       }
       return $scope.budget.set(newVal);
     });
+    $scope.budgetInEdit = null;
+    $scope.editBudget = function() {
+      if ($scope.budgetInEdit) {
+        return $scope.cancelBudget();
+      }
+      return $scope.budgetInEdit = {
+        amount: $scope.budget.amount,
+        currency: $scope.budget.currency
+      };
+    };
+    $scope.saveBudget = function() {
+      $scope.budget.currency = $scope.budgetInEdit.currency;
+      $scope.budget.set($scope.budgetInEdit.amount);
+      return $scope.budgetInEdit = null;
+    };
+    return $scope.cancelBudget = function() {
+      return $scope.budgetInEdit = null;
+    };
   });
 
   app.config(function($routeProvider) {
@@ -2299,8 +2317,8 @@
           onSave: "&",
           onClose: "&",
           onHide: "&",
-          saveButtonTitle: "=",
-          cancelButtonTitle: "=",
+          saveButtonTitle: "@",
+          cancelButtonTitle: "@",
           doNotClearForm: "@"
         },
         template: "<div class=\"dialog-panel\" ng-class=\"{shown: showIf}\">\n  <form class=\"clearfix\">\n    <div ng-transclude class='dialog-content'></div>\n    <div class='buttons'>\n      <button class='btn btn-primary' data-action=\"save\">{{ saveButtonTitle || 'Save' }}</button>\n      <button class='link' data-action=\"cancel\">{{ cancelButtonTitle || 'Close'}}</button>\n    </div>\n  </form>\n</div>",

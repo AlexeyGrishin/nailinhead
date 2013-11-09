@@ -344,6 +344,9 @@ input {
 input.input-long {
   width: 300px;
 }
+input.input-normal {
+  width: 100px;
+}
 input.input-short {
   width: 50px;
 }
@@ -487,15 +490,18 @@ ul.projects-list li > div.project .triangle-btn.delete > i {
   width: 16px;
   height: 16px;
 }
+ul.projects-list li > div.project .triangle-btn.delete.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+ul.projects-list li > div.project .triangle-btn.delete.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
 ul.projects-list li > div.project .triangle-btn.delete:hover {
   width: 1px;
 }
 ul.projects-list li > div.project .triangle-btn.delete:hover > i {
   left: -19px;
   top: 16.333333333333336px;
-}
-ul.projects-list li > div.project .triangle-btn.delete i {
-  background: url(../img/trash_white.png) no-repeat center center;
 }
 ul.projects-list li > div.project > .task-thumb {
   float: left;
@@ -652,15 +658,18 @@ ul.tasks-list li .triangle-btn.edit > i {
   width: 16px;
   height: 16px;
 }
+ul.tasks-list li .triangle-btn.edit.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+ul.tasks-list li .triangle-btn.edit.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
 ul.tasks-list li .triangle-btn.edit:hover {
   width: 1px;
 }
 ul.tasks-list li .triangle-btn.edit:hover > i {
   left: -19px;
   top: 16.333333333333336px;
-}
-ul.tasks-list li .triangle-btn.edit i {
-  background: url(../img/pencil_white.png) no-repeat center center;
 }
 ul.tasks-list li .triangle-btn.delete {
   width: 0;
@@ -679,15 +688,18 @@ ul.tasks-list li .triangle-btn.delete > i {
   width: 16px;
   height: 16px;
 }
+ul.tasks-list li .triangle-btn.delete.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+ul.tasks-list li .triangle-btn.delete.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
 ul.tasks-list li .triangle-btn.delete:hover {
   width: 1px;
 }
 ul.tasks-list li .triangle-btn.delete:hover > i {
   left: -19px;
   top: 16.333333333333336px;
-}
-ul.tasks-list li .triangle-btn.delete i {
-  background: url(../img/trash_white.png) no-repeat center center;
 }
 section.task-actions {
   position: absolute;
@@ -818,15 +830,18 @@ label.total {
   width: 16px;
   height: 16px;
 }
+.selection-panel > .selection-content .triangle-btn.delete.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+.selection-panel > .selection-content .triangle-btn.delete.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
 .selection-panel > .selection-content .triangle-btn.delete:hover {
   width: 1px;
 }
 .selection-panel > .selection-content .triangle-btn.delete:hover > i {
   left: -19px;
   top: 16.333333333333336px;
-}
-.selection-panel > .selection-content .triangle-btn.delete i {
-  background: url(../img/trash_white.png) no-repeat center center;
 }
 .intro {
   font-size: 14px;
@@ -949,15 +964,18 @@ label.total {
   width: 16px;
   height: 16px;
 }
+.report-tasks-list li .triangle-btn.edit.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+.report-tasks-list li .triangle-btn.edit.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
 .report-tasks-list li .triangle-btn.edit:hover {
   width: 1px;
 }
 .report-tasks-list li .triangle-btn.edit:hover > i {
   left: -19px;
   top: 16.333333333333336px;
-}
-.report-tasks-list li .triangle-btn.edit i {
-  background: url(../img/pencil_white.png) no-repeat center center;
 }
 @font-face {
   font-family: 'open_sanslight';
@@ -990,6 +1008,7 @@ body {
   min-width: 800px;
   margin-left: auto;
   margin-right: auto;
+  position: relative;
 }
 .main-content {
   padding-top: 45px;
@@ -1016,7 +1035,7 @@ body {
 .header {
   width: 100%;
   z-index: 100;
-  height: 30px;
+  min-height: 30px;
   padding: 5px;
   font-size: 18px;
   position: fixed;
@@ -1053,37 +1072,100 @@ body {
   text-shadow: none;
   padding-top: 4px;
 }
+.header .edit-budget-dialog {
+  margin-top: 5px;
+  clear: both;
+  width: 230px;
+  float: right;
+}
+.header .edit-budget-dialog form {
+  padding: 5px;
+}
+.header .edit-budget-dialog .buttons {
+  padding-right: 0;
+}
+.header .edit-budget-dialog .buttons .link {
+  padding-right: 0;
+}
 .header .budget {
   float: right;
   margin-right: 10px;
-  width: 150px;
+  width: 220px;
+  position: relative;
+  height: 30px;
+  /*
+    input {
+      .transition();
+      border: none;
+      color: #b8860b;
+      font-size: @fontBiggest;
+      font-weight: bold;
+      background: none;
+      width: 90px;
+      text-align: right;
+      &.start-counting {
+        //color: #e6a80b;
+        text-shadow: 0 0 1px #e6a80b;
+      }
+      &:focus {
+        background: white;
+        color: black;
+        .inner-shadow()
+      }
+    }*/
+
 }
-.header .budget .currency {
+.header .budget span.label {
   padding-top: 4px;
-  max-width: 35px;
+  width: 70px;
+  text-align: right;
+  display: inline-block;
 }
-.header .budget input {
-  -webkit-transition: all 0.2s ease-out;
-  -moz-transition: all 0.2s ease-out;
-  -o-transition: all 0.2s ease-out;
-  transition: all 0.2s ease-out;
-  border: none;
+.header .budget .amount {
   color: #b8860b;
+  padding-top: 4px;
+  width: 100px;
+  display: inline-block;
+  margin-right: 40px;
+  text-align: right;
   font-size: 18px;
   font-weight: bold;
-  background: none;
-  width: 90px;
-  text-align: right;
 }
-.header .budget input.start-counting {
+.header .budget .amount.start-counting {
   text-shadow: 0 0 1px #e6a80b;
 }
-.header .budget input:focus {
-  background: white;
-  color: black;
-  -webkit-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  -moz-box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
-  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.4);
+.header .budget .triangle-btn {
+  position: absolute;
+  right: 0;
+  top: -10px;
+}
+.header .budget .triangle-btn.edit {
+  width: 0;
+  height: 0;
+  border-bottom: 33.333333333333336px solid 'transparent';
+  border-left: 33.333333333333336px solid transparent;
+  cursor: pointer;
+}
+.header .budget .triangle-btn.edit > i {
+  display: block;
+  position: relative;
+  left: -18px;
+  top: 15.333333333333336px;
+  width: 16px;
+  height: 16px;
+}
+.header .budget .triangle-btn.edit.delete > i {
+  background: url(../img/trash_white.png) no-repeat center center;
+}
+.header .budget .triangle-btn.edit.edit > i {
+  background: url(../img/pencil_white.png) no-repeat center center;
+}
+.header .budget .triangle-btn.edit:hover {
+  width: 1px;
+}
+.header .budget .triangle-btn.edit:hover > i {
+  left: -19px;
+  top: 16.333333333333336px;
 }
 .footer {
   position: fixed;

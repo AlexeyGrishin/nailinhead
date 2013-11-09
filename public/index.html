@@ -20,8 +20,10 @@
 <body ng-controller="global" gr-lang="{{currentLanguage}}">
     <div class="header" ng-controller="header">
         <div class="header-content">
-            <div class="budget" title="Edit current budget" ng-show="auth.loggedIn" gr-attrs="title">
-                <currency></currency> <input ng-model="budget.amount" countdown="budget.amount" step="500"/>
+            <div class="budget" ng-show="auth.loggedIn">
+                <span class="label" gr-key>Budget: </span> <span countdown="budget.amount" step="500" class="amount"></span>
+                <div class="triangle-btn edit" ng-click="editBudget()" title="Click to edit budget" gr-attrs="title"><i></i></div>
+
             </div>
             <div class="groups" ng-hide="!booking.amount()">
                 (<span gr-attrs='title' title="Booked tasks total amount" countdown="booking.amount()" step="500"></span> <span gr-key> booked</span>)
@@ -29,10 +31,21 @@
             <a href="#/">
                 <img src="img/logo.svg"/>
                 <h3>nailinhead</h3>
-                <sup>v0.9.3</sup>
+                <sup>v0.9.4</sup>
 
                 <loading></loading>
             </a>
+            <dialog-panel show-if="budgetInEdit"
+                          class="edit-budget-dialog one-line"
+                          do-not-clear-form
+                          save-button-title="Save"
+                          cancel-button-title="x"
+                          gr-attrs="save-button-title"
+                          on-save="saveBudget()" on-close="cancelBudget()" >
+                <label>
+                    <input ng-model="budgetInEdit.amount" class="input-normal"/>
+                </label>
+            </dialog-panel>
 
         </div>
     </div>

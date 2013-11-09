@@ -64,6 +64,23 @@ app.controller 'header', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
     $scope.budget.set newVal
+  $scope.budgetInEdit = null
+  #TODO: make service or directive for editing. pattern is simple
+  # edit.start -> copy some props from real object to editable
+  # edit.save -> copy back, call saving method, erase
+  # edit.cancel -> erase
+  $scope.editBudget = ->
+    return $scope.cancelBudget() if $scope.budgetInEdit
+    $scope.budgetInEdit = {
+      amount: $scope.budget.amount,
+      currency: $scope.budget.currency
+    }
+  $scope.saveBudget = ->
+    $scope.budget.currency = $scope.budgetInEdit.currency
+    $scope.budget.set($scope.budgetInEdit.amount)
+    $scope.budgetInEdit = null
+  $scope.cancelBudget = ->
+    $scope.budgetInEdit = null
 
 app.config ($routeProvider) ->
   $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'

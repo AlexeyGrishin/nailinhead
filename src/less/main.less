@@ -53,6 +53,7 @@ body {
 
 .header-content {
   .limited-width();
+  position: relative;
 }
 
 .main-content {
@@ -74,16 +75,12 @@ body {
   }
 }
 
-.data {
-  //background-color: #eee;
-}
-
 //header
 
 .header {
   width: 100%;
   z-index: 100;
-  height: @topHeaderHeight;
+  min-height: @topHeaderHeight;
   padding: @topHeaderPadding;
   font-size: @fontBiggest;
   position: fixed;
@@ -113,14 +110,56 @@ body {
       padding-top: 4px;
     }
   }
+  .edit-budget-dialog {
+    margin-top: 5px;
+    form {
+      padding: 5px;
+    }
+    clear: both;
+    width: 230px;
+    float: right;
+    .buttons {
+      padding-right: 0;
+      .link {
+        padding-right: 0;
+      }
+    }
+  }
   .budget {
     float: right;
     margin-right: 10px;
-    width: 150px;
-    .currency {
+    width: 220px;
+    position: relative;
+    height: @topHeaderHeight;
+    span.label {
       padding-top: 4px;
-      max-width: 35px;
+      width: 70px;
+      text-align: right;
+      display: inline-block;
     }
+    .amount {
+      color: #b8860b;
+      padding-top: 4px;
+      width: 100px;
+      display: inline-block;
+      margin-right: 40px;
+      text-align: right;
+      font-size: @fontBiggest;
+      font-weight: bold;
+      &.start-counting {
+        text-shadow: 0 0 1px #e6a80b;
+      }
+    }
+    .triangle-btn {
+      position: absolute;
+      right: 0;
+      top: -10px;
+      &.edit {
+        .triangle-btn(@editButtonWidth, 'transparent', 16px);
+      }
+    }
+
+    /*
     input {
       .transition();
       border: none;
@@ -139,7 +178,7 @@ body {
         color: black;
         .inner-shadow()
       }
-    }
+    }*/
   }
   .autoGradient(@headerBg)
 }

@@ -164,7 +164,9 @@ input{
   &.input-long {
     width: 300px;
   }
-
+  &.input-normal {
+    width: 100px;
+  }
   &.input-short {
     width: 50px;
   }
@@ -240,6 +242,12 @@ p.error {
     top: @top;
     width: @iconSize;
     height: @iconSize;
+  }
+  &.delete > i {
+    background: url(../img/trash_white.png) no-repeat center center
+  }
+  &.edit > i {
+    background: url(../img/pencil_white.png) no-repeat center center
   }
   &:hover {
     width: 1px;

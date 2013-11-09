@@ -34,8 +34,8 @@ module.exports = (app) ->
       onSave: "&"
       onClose: "&"
       onHide: "&"
-      saveButtonTitle: "="
-      cancelButtonTitle: "="
+      saveButtonTitle: "@"
+      cancelButtonTitle: "@"
       doNotClearForm: "@"
 
     template:

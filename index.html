@@ -2,14 +2,13 @@
 <html ng-app="puzzle">
 <head>
     <meta charset="utf-8"/>
-    <script src="js/jquery.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
     <script src="js/jquery-ui-1.10.3.custom.min.js"></script>
-    <script src="js/bootstrap.min.js"></script>
-    <script src="js/angular.js"></script>
-    <script src="js/parse-1.2.12.js"></script>
-    <script src="js/granula.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.8/angular.min.js"></script>
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
+    <script src="js/parse-1.2.12.min.js"></script>
     <script src="js/index.js"></script>
-    <link rel="stylesheet" href="css/bootstrap.css"/>
+    <link rel="stylesheet" href="css/bootstrap.min.css"/>
     <link rel="stylesheet" href="css/main.css"/>
     <link rel="icon" type="image/png" href="/favicon.ico" />
     <title>nailinhead</title>
@@ -22,16 +21,16 @@
         <div class="header-content">
             <div class="budget" ng-show="auth.loggedIn">
                 <span class="label" gr-key>Budget: </span> <span countdown="budget.amount" step="500" class="amount"></span>
-                <div class="triangle-btn edit" ng-click="editBudget()" title="Click to edit budget" gr-attrs="title"><i></i></div>
+                <div class="triangle-btn edit" ng-click="editBudget()"><i  ui-title="Click to edit budget" position="bottom" gr-attrs="ui-title"></i></div>
 
             </div>
             <div class="groups" ng-hide="!booking.amount()">
-                (<span gr-attrs='title' title="Booked tasks total amount" countdown="booking.amount()" step="500"></span> <span gr-key> booked</span>)
+                (<span gr-attrs='ui-title' ui-title="Booked tasks total amount" countdown="booking.amount()" step="500"></span> <span gr-key> booked</span>)
             </div>
             <a href="#/">
                 <img src="img/logo.svg"/>
                 <h3>nailinhead</h3>
-                <sup>v0.9.4</sup>
+                <sup>0.9.5</sup>
 
                 <loading></loading>
             </a>
@@ -52,12 +51,24 @@
     <div class="main-content" ng-view>
 
     </div>
-    <div ng-show="auth.loggedIn" class="footer">
+    <div ng-show="auth.loggedIn" class="footer" ng-controller='footer'>
+        <ui-dialog model='dialogs.help' class="info-dialog" close-title="Close" gr-attrs='close-title'>
+            <div ng-include="'partial/help.' + currentLanguage + '.html'"></div>
+        </ui-dialog>
+        <ui-dialog model='dialogs.error' class="error-dialog"  gr-attrs='close-title' close-title="Erase & Close" close-action="hideErrors()">
+            <div ng-include="'partial/error-panel.html'"></div>
+        </ui-dialog>
         <div class="footer-content">
             <ul class="nav">
                 <li ng-class="{selected: section=='projects'}"><a href="#/" gr-key> Projects</a></li>
                 <li ng-class="{selected: section=='reports'}"><a href="#/reports" gr-key>Reports</a></li>
             </ul>
+            <a class="info-icon" ng-class="{info: status.showHelp, error: status.showError}"
+               ng-click='clickInfo()'
+                    >
+                <i class="info" ui-title="Show help" gr-attrs="ui-title" placement="top">?</i>
+                <i class="error" ui-title="Unexpected error occurred. Click to see details." gr-attrs="ui-title" placement="top">!</i>
+            </a>
             <lang-selector></lang-selector>
             <strong class="user-name" gr-key>You are logged in as {{auth.currentUser.username}}</strong>
             <a class="logout link-danger" ng-click="logout()" gr-key>Logout</a>

@@ -16,7 +16,9 @@
 <table ng-show='!report.loading' class="report-table">
     <tr>
         <th></th>
-        <th ng-repeat='date in report.dates' ng-class='{current: report.currentDateIdx == $index}'>{{date.month | month}} {{date.year}}</th>
+        <th ng-repeat='date in report.dates' ng-class='{current: report.currentDateIdx == $index}'>
+            <a href="#/reports/{{date.year}}/{{date.month}}"> {{date.month | month}} {{date.year}}</a>
+        </th>
     </tr>
     <tr ng-repeat='proj in report.projects'>
         <th>{{proj.name}}</th>
@@ -30,7 +32,7 @@
     <li ng-repeat="task in report.tasks | orderBy:'cProjectName'">
         <strong>{{task.title}} <span class="tag">{{task.cProjectName}}</span></strong>
         <span class="cost">{{task.cost | cost}}</span>
-        <div class="triangle-btn edit" ng-click="editTask(task)" title="Click to edit or delete the task" gr-attrs="title"><i></i></div>
+        <div class="triangle-btn edit" ng-click="editTask(task)" ui-title="Click to edit or delete the task" gr-attrs="ui-title"><i></i></div>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"
                       do-not-clear-form

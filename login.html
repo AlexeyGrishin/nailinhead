@@ -1,11 +1,15 @@
 <div>
-    <ng-include src="'partial/error-panel.html'"></ng-include>
+    <p class='error' ng-show='error'>
+        <ng-include src="'partial/error-panel.html'"></ng-include>
+    </p>
     <div class="intro clearfix">
         <div class="information">
-            <h4 gr-key>Welcome to <b>nailinhead</b> application!</h4>
-            <p gr-key>Here will be description. Soon. Really.</p>
+            <h1 gr-key>Welcome to <b>nailinhead</b> application!</h1>
+            <div ng-include="'partial/help.' + currentLanguage + '.html'"></div>
         </div>
+        <div class="right-panel">
         <div class="login-form">
+
             <lang-selector></lang-selector>
             <form class="login">
                 <label>
@@ -20,6 +24,10 @@
                     <button class="btn btn-good" long-click="register()" processing="logReg" gr-key>Register</button>
                 </section>
             </form>
+        </div>
+        <div class="contacts">
+            <a href="mailto:alexey.grishin@gmail.com" gr-key>Send me e-mail</a>
+        </div>
         </div>
     </div>
 

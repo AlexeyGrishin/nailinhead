@@ -2,9 +2,9 @@
     <span ng-switch-when='200' gr-key>Username is missing</span>
     <span ng-switch-when='201' gr-key>Password is missing</span>
     <span ng-switch-when='202' gr-key>Username is already taken by another user</span>
-    <span ng-shitch-when='conflict' gr-key>Someone changed this budget in concurrent session. To see actual information please reload the page</span>
+    <span ng-switch-when="conflict" gr-key>Someone changed this budget in concurrent session. To see actual information please reload the page</span>
     <span ng-switch-when='101'>
-        <span ng-show='error.isLogin'>Invalid username or password</span>
-        <span ng-hide='error.isLogin'>Object not found</span>
+        <span ng-show='error.isLogin' gr-key>Invalid username or password</span>
+        <span ng-hide='error.isLogin' gr-key>Object you've tried to edit not found. To see actual information please reload the page</span>
     </span>
 </ng-switch>

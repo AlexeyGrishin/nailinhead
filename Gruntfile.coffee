@@ -73,6 +73,16 @@ module.exports = (grunt) ->
         options:
           context:
             version: version
+            production: true
+      test:
+        expand: true
+        cwd: 'public'
+        src: "index.html"
+        dest: "public/tests/"
+        options:
+          context:
+            version: version
+            production: false
     copy:
       fonts:
         expand: true
@@ -112,7 +122,7 @@ module.exports = (grunt) ->
   grunt.loadNpmTasks 'grunt-karma'
   grunt.loadNpmTasks 'grunt-contrib-clean'
   grunt.registerTask 'dev', ['coffee:building','less', 'coffee', 'browserify']
-  grunt.registerTask 'unit-tests', ['coffee:tests', 'karma:runBackground:run']
+  grunt.registerTask 'unit-tests', ['preprocess:test','coffee:tests', 'karma:runBackground:run']
   grunt.registerTask 'unit-tests-run', ['dev', 'coffee:tests', 'karma:run']
   grunt.registerTask 'release', ['dev', 'clean:release', 'uglify:release', 'preprocess:release', 'cssmin:release',
                                  'copy:lang', 'copy:images', 'copy:someJs', 'copy:someCss', 'copy:fonts']

@@ -82,7 +82,7 @@ app.controller 'footer', ['$scope', 'status', ($scope, status) ->
 
 app.controller 'header', ['$scope', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
-    return unless $scope.auth.loggedIn
+    return unless $scope.auth?.loggedIn
     $scope.budget.set newVal
   $scope.budgetInEdit = null
   #TODO: make service or directive for editing. pattern is simple

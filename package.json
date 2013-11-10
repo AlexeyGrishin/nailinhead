@@ -1,6 +1,6 @@
 {
   "name": "nailinhead",
-  "version": "0.9.4",
+  "version": "0.9.5",
   "author": "Alexey Grishin <alexey.grishin@gmail.com>",
   "dependencies": {
     "grunt": "*",

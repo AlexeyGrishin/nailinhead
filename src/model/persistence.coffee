@@ -18,7 +18,7 @@ ParseUtils =
           if delta isnt undefined
             obj.increment(attr, -delta)
             obj.save()
-          promise.reject({conflict: true})
+          promise.reject({code: 'conflict', message: 'Conflict occurred'})
       error: (_, error) ->
         promise.reject(error)
     }
@@ -69,9 +69,7 @@ class BgSaver
   save: (obj) ->
     existentInMap = @queue.filter((q) => @idGetter(q.obj) == @idGetter(obj))[0]
     if existentInMap
-      console.log "Object already in queue - #{@idGetter(obj)} == #{@idGetter(existentInMap.obj)}"
       return existentInMap.promise
-    console.log "Push object to saving queue - #{@idGetter(obj)}"
     promise = new Parse.Promise()
     @queue.push {obj, promise}
     clearInterval(@to)
@@ -79,7 +77,6 @@ class BgSaver
     promise
 
   _save: ->
-    console.log "Time to save queue - #{@queue.length} objects"
     for o in @queue.splice(0, @queue.length)
       (({obj, promise}) =>
         @_saveObject(obj).then ((res) -> promise.resolve(res)), (err) -> promise.reject(err)
@@ -89,11 +86,9 @@ class BgSaver
     @saver.save(obj, options)
 
   flush: ->
-    console.log "Flush objects"
     @_save()
 
   saveNow: (obj, options) ->
-    console.log "Save immediately - #{obj.constructor.name}"
     clearTimeout(@to)
     @_save()
     @_saveObject(obj, options)
@@ -134,6 +129,7 @@ class ModelMixin
     @beforeSave()
     promise = new Parse.Promise()
     promise._thenRunCallbacks(options)
+    callGlobalErrorHandler = not options.error
     delete options.success
     delete options.error
     @persistence().save(@, options).then ((json)=>
@@ -141,6 +137,7 @@ class ModelMixin
       promise.resolve(@)
     ), (error) ->
       promise.reject(error)
+      GlobalErrorHandler.onError(error) if callGlobalErrorHandler
     promise
 
   load: (data = {}) ->
@@ -164,6 +161,8 @@ class ModelMixin
       k.charAt(0) != '_' &&
       k.charAt(0) != '$' &&
       k != 'persistence'
+  onError: (error) ->
+    GlobalErrorHandler.onError(error)
 
 ParseClassMethods = (options = {linkToCurrentUser:true})->
   (clsName, cls, addInstanceMethods) ->
@@ -185,9 +184,17 @@ ParseClassMethods = (options = {linkToCurrentUser:true})->
 
     init: (obj) ->
       parseObj = new ParseClass()
-      parseObj.setACL(new Parse.ACL(Parse.User.current()))
+      parseObj.setACL(new Parse.ACL(Parse.User.current())) if options.linkToCurrentUser
       addInstanceMethods(obj, parseObj)
 
+    registerGlobalErrorHandler: (handler) ->
+      GlobalErrorHandler.register(handler)
+
+GlobalErrorHandler =
+  handler: (error) -> console.error(error)
+  register: (@handler) ->
+  onError: (error) ->
+    @handler(error)
 
 parseSetAll = (parseObj, o, data) ->
   if data
@@ -227,7 +234,6 @@ ParseNowriteInstanceMethods = ->
     save: (o, options) ->
       o.objectId = "#{o.constructor.name}-#{id++}" if not o.objectId
       parseSetAll(parseObj, o, options.data)
-      console.log "Save #{o.constructor.name} / #{o.objectId} = #{JSON.stringify(parseObj.attributes)}"
       p = new Parse.Promise()
       p._thenRunCallbacks(options)
       p.resolve(o)
@@ -250,6 +256,7 @@ MemClassMethods = ->
       p
     init: (o) ->
       addInstanceMethods(o, clsName, memStorage)
+    registerGlobalErrorHandler: ->
 
 
 MemInstanceMethods = ->

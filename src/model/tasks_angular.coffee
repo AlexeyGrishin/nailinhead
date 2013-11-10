@@ -4,7 +4,7 @@ ModelMixin = require('./persistence')
 
 module.exports = (app) ->
 
-  app.run ($rootScope, $timeout) ->
+  app.run ['$rootScope', '$timeout', ($rootScope, $timeout) ->
     oldAjax = Parse._ajax
     counter = 0
     apply = ->
@@ -19,11 +19,14 @@ module.exports = (app) ->
       p = oldAjax.call(Parse, args...)
       p.then apply, apply
       p
+  ]
 
 
   app.provider 'budget', ->
     mode = 'production'
     remix(ModelMixin.parseBgMixin)
+    setErrorHandler: (handler) ->
+      Budget.registerGlobalErrorHandler(handler)
     setMode: (_mode) ->
       mode = _mode
       if mode == 'debug'

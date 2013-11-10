@@ -1,6 +1,6 @@
 module.exports = (app) ->
 
-  app.service 'auth', (backend, $rootScope) ->
+  app.service 'auth', ['backend', '$rootScope', '$timeout', (backend, $rootScope, $timeout) ->
     loggedIn = ->
       console.log "auth:loggedIn"
       $rootScope.$broadcast 'auth:loggedIn'
@@ -31,8 +31,11 @@ module.exports = (app) ->
           cb()
       check: ->
         $rootScope.$broadcast 'auth:checking'
+        @checking = true
         backend.getLoginStatus (loggedInFlag) =>
-          @loggedIn = loggedInFlag
-          fireEvent loggedInFlag, !loggedInFlag
+          $timeout =>
+            @checking = false
+            @loggedIn = loggedInFlag
+            fireEvent loggedInFlag, !loggedInFlag
     auth
-
+  ]

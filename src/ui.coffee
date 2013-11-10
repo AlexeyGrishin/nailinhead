@@ -114,35 +114,6 @@ module.exports = (app) ->
 
       el.data "dialog", dialog
 
-
-  app.directive "deleteTo", ->
-    link: (scope, el, attrs) ->
-      cls = "#{attrs.deleteTo}-item"
-      $(el).addClass(cls).draggable {
-        revert: true
-        opacity: 0.8
-      }
-      $(el).on "dragstart", ->
-        $(el).addClass(cls)   #angular may remove class for some reason
-      $(el).data "onDrop", ->
-        if attrs.onDelete
-          scope.$apply ->
-            scope.$eval attrs.onDelete
-      deleteTo = $("." + attrs.deleteTo)
-      deleteTo.droppable {
-        accept: "." + cls
-        tolerance: "touch"
-        hoverClass: "ready-to-drop"
-        activate: ->
-          deleteTo.addClass("drop-here")
-        deactivate: ->
-          deleteTo.removeClass("drop-here")
-        drop: (e, ui) ->
-          ui.draggable.data("onDrop")()
-          true
-      }
-
-
   app.directive 'currency', ->
     template: "<span class='currency'>{{budget.currency}}</span>"
     restrict: 'E'
@@ -187,7 +158,42 @@ module.exports = (app) ->
 
   app.directive 'uiTitle', ->
     (scope, el, attrs) ->
-      el.tooltip placement: "right", html: true, title: -> attrs.uiTitle
+      el.tooltip placement: attrs.placement ? attrs.position ? "right", html: true, title: -> attrs.uiTitle
+
+  app.directive 'uiDialog', ->
+    transclude: true
+    restrict: 'E'
+    replace: true
+    template:
+      """
+      <div class="modal" role="dialog" id="help" aria-hidden='true'>
+        <div class='modal-header'></div>
+        <div class="modal-body" ng-transclude>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" data-dismiss='modal'>{{closeTitle}}</button>
+        </div>
+      </div>
+      """
+    scope:
+      model: "="
+      closeTitle: "@"
+      closeAction: "&"
+    link: (scope, el, attrs) ->
+      $.support.transition = false
+      $(el).modal()
+      $(el).modal('hide')
+      $(el).on 'shown', ->
+        scope.$apply ->
+          scope.model.show = true
+      $(el).on 'hidden', ->
+        scope.$apply ->
+          scope.closeAction()
+          scope.model.show = false
+      scope.$watch("model.show", ->
+        $(el).modal(if scope.model.show then 'show' else 'hide')
+      , true)
+
 
   addZeros = (num, amount) ->
     str = num + ''
@@ -207,13 +213,14 @@ module.exports = (app) ->
 
   app.filter 'cost', -> formatCost
 
-  app.filter 'month', (grService) ->
+  app.filter 'month', ['grService', (grService) ->
     (input) ->
       grService.compile("month#{input}")
+  ]
 
   LANG_KEY = 'NIH_language'
 
-  app.directive 'langSelector', ($rootScope, grService) ->
+  app.directive 'langSelector', ['$rootScope', 'grService', ($rootScope, grService) ->
     $rootScope.currentLanguage = localStorage[LANG_KEY] ? grService.originalLanguage
     $rootScope.$on 'gr-lang-changed', (e, lang) ->
       $rootScope.currentLanguage = lang
@@ -225,7 +232,7 @@ module.exports = (app) ->
       scope.languages = ['en', 'ru']
       scope.changeLanguage = (lang) ->
         grService.setLanguage lang
-
+  ]
 
   #<a long-click='doAction()' processing='processing'>
   app.directive 'longClick', ->
@@ -243,6 +250,23 @@ module.exports = (app) ->
           el.removeClass('processing')
           el.removeAttr('disabled')
           processingByOurClick = false
+
+  app.provider 'status', ->
+    status:
+      showHelp: true
+      showError: false
+      error: null
+    onError: (error) ->
+      @status.error = error
+      @status.showError = true
+      @status.showHelp = false
+    hideErrors: ->
+      @status.error = null
+      @status.showHelp = true
+      @status.showError = false
+    $get: -> @
+
+
 
   return {getDialog}
 

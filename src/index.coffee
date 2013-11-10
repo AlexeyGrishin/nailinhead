@@ -2,17 +2,20 @@ app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
 
 {getDialog} = (require './ui')(app)
-(require './async')(app)
 (require './tasks/selection')(app)
 (require './tasks/actions')(app)
 (require './auth/auth')(app)
 (require './model/tasks_angular')(app)
 
-app.config (budgetProvider) ->
+app.config ['budgetProvider', 'statusProvider', (budgetProvider, status) ->
   #budgetProvider.setMode 'debug'
   #budgetProvider.setMode 'local'
+  budgetProvider.setErrorHandler (err) ->
+    status.onError err
+    console.error "ERR", err
+]
 
-app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
+app.controller 'global', ['$scope', 'budget', 'auth', '$location', 'status', ($scope, budget, auth, $location, status) ->
   $scope.loading = true
   reset = ->
     $scope.budget = {amount: 0}
@@ -36,6 +39,7 @@ app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
     auth.logout(->)
   auth.check()
   $scope.$on '$routeChangeSuccess', (ev, route) ->
+    $location.path "/auth" if $location.path() != '/auth' && not auth.loggedIn && not auth.checking
     $scope.section = route.section
 
   $scope.import = ->
@@ -57,10 +61,26 @@ app.controller 'global', ($scope, budget, backend, auth, $location, $route) ->
           console.error "Cannot import task - unknown project '#{tData.project}' - #{JSON.stringify(tData, null, 4)}"
           continue
         task = project.addTask tData
+]
 
+app.controller 'footer', ['$scope', 'status', ($scope, status) ->
+  $scope.status = status.status
+  $scope.dialogs =
+    error:
+      show: false
+    help:
+      show: false
+  $scope.hideErrors = ->
+    status.hideErrors()
+  $scope.clickInfo = ->
+    if status.status.showError
+      $scope.dialogs.error.show = true
+    else
+      $scope.dialogs.help.show = true
 
+]
 
-app.controller 'header', ($scope) ->
+app.controller 'header', ['$scope', ($scope) ->
   $scope.$watch 'budget.amount', (newVal) ->
     return unless $scope.auth.loggedIn
     $scope.budget.set newVal
@@ -81,18 +101,21 @@ app.controller 'header', ($scope) ->
     $scope.budgetInEdit = null
   $scope.cancelBudget = ->
     $scope.budgetInEdit = null
+]
 
-app.config ($routeProvider) ->
+app.config ['$routeProvider', ($routeProvider) ->
   $routeProvider.when '/', controller: 'projects', templateUrl: './projects.html', section:'projects'
   $routeProvider.when '/reports/:year/:month', controller: 'reports', templateUrl: './reports.html', section:'reports'
   $routeProvider.when '/reports/:year', controller: 'reports', templateUrl: './reports.html', section:'reports'
   $routeProvider.when '/reports', controller: 'reports', templateUrl: './reports.html', section:'reports'
   $routeProvider.when '/auth', controller: 'login', templateUrl: './login.html'
   $routeProvider.when '/:project', controller: 'project', templateUrl: './project.html', section:'projects'
+]
 
-app.controller 'login', ($scope, auth, $location) ->
+app.controller 'login', ['$scope', 'auth', '$location', ($scope, auth, $location) ->
   $scope.auth = auth
-
+  if auth.loggedIn
+    return $location.path "/"
   onLogReg = (user, error) ->
     if user
       $location.path "/"
@@ -110,8 +133,9 @@ app.controller 'login', ($scope, auth, $location) ->
   $scope.login = ->
     startCall()
     auth.login $scope.auth.username, $scope.auth.password, onLogReg
+]
 
-app.controller 'projects', ($scope, $location, tasksSelection) ->
+app.controller 'projects', ['$scope', '$location', 'tasksSelection', ($scope, $location, tasksSelection) ->
   $scope.newProject = {title:""}
   $scope.addProject = ->
     if $scope.newProject.title
@@ -128,12 +152,13 @@ app.controller 'projects', ($scope, $location, tasksSelection) ->
   $scope.selection = tasksSelection.createSelection()
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
-
+]
 
 SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
 safeApply = ($scope)->
   $scope.$apply() if not $scope.$$phase
-app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
+
+app.controller 'project', ['tasksSelection', 'budget', '$scope', '$routeParams', '$location', (tasksSelection, budget, $scope, $routeParams, $location) ->
 
   $scope.showCompleted = localStorage?[SHOW_COMPLETED_KEY] == 'true'
   $scope.$watch 'showCompleted', ->
@@ -142,6 +167,10 @@ app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
   projectId = $routeParams.project
   budget.whenLoad().then (budget) ->
     $scope.project = budget.getProject(projectId)
+    if $scope.project == null
+      $location.path '/'
+      #TODO: show error
+      return
     visibleTasks = if $scope.showCompleted then $scope.project.tasks else $scope.project.nonCompleted()
     if (visibleTasks.length == 0)
       $scope.addTaskDialog = true
@@ -201,8 +230,9 @@ app.controller 'project', (tasksSelection, budget, $scope, $routeParams) ->
   $scope.selection = tasksSelection.createSelection()
   $scope.$on "$destroy", ->
     $scope.selection.deselectAll()
+]
 
-app.controller 'reports', (budget, $scope, $routeParams, $location) ->
+app.controller 'reports', ['budget', '$scope', '$routeParams', '$location', (budget, $scope, $routeParams, $location) ->
   year = parseFloat($routeParams.year)
   month = parseFloat($routeParams.month)
   month = 0 if not isNaN(year) and isNaN(month)
@@ -258,6 +288,7 @@ app.controller 'reports', (budget, $scope, $routeParams, $location) ->
     task.save({}, {now: true}).then ->
       $scope.loadReport()
     $scope.cancelEdit()
+]
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->
@@ -300,7 +331,7 @@ app.service 'projectThumbModel', ->
 
 
 
-app.directive 'projectThumb', (projectThumbModel, $location) ->
+app.directive 'projectThumb', ['projectThumbModel', '$location', (projectThumbModel, $location) ->
   scope:
     project: "=projectThumb"
     selection: "=selection"
@@ -314,6 +345,7 @@ app.directive 'projectThumb', (projectThumbModel, $location) ->
       if task.status == "more"
         $location.path "/#{scope.project.objectId}"
     scope.isSelected = (task) -> scope.selection.isSelected(task)
+]
 
 app.directive 'ngEnter', ->
   (scope, el, attrs) ->

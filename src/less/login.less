@@ -7,35 +7,54 @@
     margin: 10px;
     box-sizing: border-box;
     &.information {
-      width: 600px;
-    }
-    &.login-form {
-      .rounded(20px);
-      .box-shadow(inset 0px 0px 10px @grayLight);
-      background-color: @grayPanel;
-      padding-top: 20px;
-      width: 280px;
-      > .lang-selector {
-        float: right;
-        margin-right: 20px;
+      width: 700px;
+      @media screen and (max-width: 1100px) {
+        width: 600px;
       }
-      > form {
-        background-color: transparent;
-        color: black;
-        label {
-          margin: 20px;
-          position: relative;
-          display: block;
-          input {
-            position: absolute;
-            left: 70px;
-            width: 140px;
-          }
+      @media screen and (max-width: 1000px) {
+        width: 500px;
+      }
+      .help();
+    }
+    &.right-panel {
+      position: fixed;
+      top: 100px;
+      right: 100px;
+      @media screen and (max-width: 1300px) {
+        right: 10px;
+      }
+      .contacts {
+        padding: 10px;
+        margin-top: 10px;
+      }
+      .login-form {
+        .rounded(20px);
+        .box-shadow(inset 0px 0px 10px @grayLight);
+        background-color: @grayPanel;
+        padding-top: 20px;
+        width: 300px;
+        > .lang-selector {
+          float: right;
+          margin-right: 20px;
         }
-        section.buttons {
-          padding-left: 90px;
-          button {
-            margin-bottom: 5px;
+        > form {
+          background-color: transparent;
+          color: black;
+          label {
+            margin: 20px;
+            position: relative;
+            display: block;
+            input {
+              position: absolute;
+              left: 90px;
+              width: 140px;
+            }
+          }
+          section.buttons {
+            padding-left: 110px;
+            button {
+              margin-bottom: 5px;
+            }
           }
         }
       }

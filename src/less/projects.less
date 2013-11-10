@@ -2,15 +2,15 @@
 @projectThumbWidth: 220px;
 @projectThumbHPad: 5px;
 @taskThumbHPad: 10px;
-@projectLiPad: 10px;
+@projectLiPad: 20px;
 @projectNameHeight: 30px;
 ul.projects-list {
   list-style: none;
   padding-left: 0;
-  margin-right: -@projectLiPad;
   @bgColor: #ddd;
   li {
-    padding: @projectLiPad;
+    padding-left: @projectLiPad;
+    padding-top: @projectLiPad;
     float: left;
     display: block;
     & > div.project {

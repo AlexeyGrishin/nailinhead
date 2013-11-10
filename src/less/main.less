@@ -44,7 +44,7 @@ body {
 .limited-width {
   width: 100%;
   max-width: 1000px;
-  min-width: 800px;
+  min-width: 600px;
   margin-left: auto;
   margin-right: auto;
 }
@@ -192,6 +192,7 @@ body {
   bottom: 0;
   left: 0;
   right: 0;
+  z-index: 1045;
   .footer-content {
     .limited-width();
     ul.nav {
@@ -214,6 +215,10 @@ body {
       display: inline-block;
       margin-right: 20px;
     }
+    > .info-icon {
+      margin-right: 20px;
+    }
+
     > strong.user-name {
       padding-right: 10px;
     }
@@ -229,4 +234,86 @@ span.currency {
   color: #444;
   text-shadow: 0px 0px 4px @goldDark;
   font-style: normal;
+}
+
+// info/error icon/dialogs
+
+.info-icon {
+  @size: 20px;
+  .transition();
+  cursor: pointer;
+  &:hover {
+    text-decoration: none;
+  }
+  i {
+    font-style: normal;
+    display: none;
+    .transition();
+  }
+  display: inline-block;
+  width: @size;
+  height: @size;
+  font-size: @size - 6px;
+  font-weight: bold;
+  line-height: @size ;
+  text-align: center;
+  &.error {
+    .error {
+      display: block;
+      color: white;
+    }
+    .rounded(0);
+    background-color: @redLight;
+  }
+  &.info {
+    .rounded(@size);
+    background-color: @grayLight;
+    .info {
+      display: block;
+      color: white;
+    }
+  }
+}
+
+.modal-header {
+  border-bottom: none;
+  display: none;
+}
+
+.help() {
+  h3 {
+    background: @grayPanel;
+  }
+  p.img {
+    text-align: center;
+    .box-shadow(0 0 10px @grayDark);
+    .rounded(10px);
+    padding: 10px;
+  }
+}
+
+.info-dialog {
+  width: 800px;
+  margin-left: -400px;
+  font-size: @fontBig;
+  .help()
+}
+
+.error-dialog {
+  width: 1000px;
+  margin-left: -500px;
+  color: @redDark;
+  font-size: @fontBig;
+}
+
+.icon-sample {
+  width: 20px;
+  height: 20px;
+  display: inline-block;
+  background-color: #888;
+  background-position: center center;
+  background-repeat: no-repeat;
+  &.edit {
+    background-image: url('/img/pencil_white.png');
+  }
 }

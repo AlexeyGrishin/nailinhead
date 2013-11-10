@@ -18,8 +18,8 @@ Backend =
       Parse.User.logOut()
       cb(authenticated)
     else
-      @_updateCurrentUser ->
-        cb(authenticated)
+      @_updateCurrentUser()
+      cb(authenticated)
 
 
   _updateCurrentUser: (cb = ->) ->

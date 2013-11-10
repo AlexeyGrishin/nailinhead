@@ -1,6 +1,6 @@
 <div class="selection-panel" ng-class="{'hidden-panel': selection.tasks.length == 0}" ng-cloak>
     <div class="selection-content">
-        <strong title="Click to deselect all" ng-click="selection.deselectAll()" gr-attrs="title">
+        <strong ui-title="Click to deselect all" ng-click="selection.deselectAll()" gr-attrs="ui-title" position="bottom">
             <span  gr-key>{{selection.tasks.length}} task(s) selected</span>
             <span class="hint" ng-show="selection.tasks.length == 1" gr-key>Ctrl+Click to select more</span>
             <a  gr-key>Deselect all</a>
@@ -8,6 +8,7 @@
 
         <task-selection-list selection="selection"></task-selection-list>
         <div class="triangle-btn delete" ng-click="selection.delete()"
-             title="Click to delete the selected task(s):selection.tasks.length" gr-attrs="title"><i></i></div>
+             position="bottom"
+             ui-title="Click to delete the selected task(s):selection.tasks.length" gr-attrs="ui-title"><i></i></div>
     </div>
 </div>

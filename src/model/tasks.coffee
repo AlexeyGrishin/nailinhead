@@ -66,17 +66,16 @@ class Task extends ModelMixin
   is: (status) -> status == @status
   complete: ->
     return if @completed == 1
-    p = new Parse.Promise()
     @withBudget (b)=> b.onComplete(@)
-    @save {completed: 1}, {
+    p = @save {completed: 1}, {
       safe: true,
       success: =>
         comDate = new Date()
         @save {cMonth: comDate.getMonth(), cYear: comDate.getFullYear(), cProjectName: @project.name}
       error: (err) =>
-        if err.conflict
+        if err.code == 'conflict'
           @withBudget (b)=> b.onUncomplete(@)
-        #error
+        @onError err
     }
     @updateStatus()
     p
@@ -88,7 +87,9 @@ class Task extends ModelMixin
       success: =>
         #that's ok
       error: (err) =>
-        @withBudget (b) => b.onComplete(@) if err.conflict
+        if err.code == 'conflict'
+          @withBudget (b) => b.onComplete(@)
+        @onError err
     }
     @updateStatus()
     p
@@ -119,8 +120,8 @@ class Budget extends ModelMixin
           t.updateStatus()
         @tasks = tasks
 
-      error: =>
-        #error
+      error: (_, e) =>
+        @onError(e)
     }).then =>
       Project.find({budget: @objectId, deleted: 0}, {
         success: (projects) =>
@@ -128,6 +129,8 @@ class Budget extends ModelMixin
           @projects = projects
           @_linkProjectsTasks()
           cb()
+        error: (_, e) =>
+          @onError(e)
       })
 
   _linkProjectsTasks: ->
@@ -166,7 +169,9 @@ class Budget extends ModelMixin
           getTasks(month, year, reportBuilder, prevMonth-1, cb)
         else
           cb(reportBuilder)
-      , (error) -> #error
+      , (error) =>
+        @onError error
+
     builder = new Report()
     startFrom = dateUtils.nextMonth({month,year}, monthsAfter)
     getTasks startFrom.month, startFrom.year, builder, monthsBefore + monthsAfter, ->
@@ -232,7 +237,9 @@ class Budget extends ModelMixin
           cb(null, budgets[0])
         else
           new Budget(amount: 0).save().then ((b) -> cb(null, b)), (err) -> cb(err)
-      error: (_, e) -> cb(e)}
+      error: (_, e) ->
+        cb(e)
+    }
 
 class Project extends ModelMixin
   @PARSE_CLASS = "Project2"

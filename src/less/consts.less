@@ -40,3 +40,10 @@
 @editButtonWidth: @taskRowHeight * 2/3;
 @interSectionPadding: 10px;
 @rightEdgeOfTitle: @editButtonWidth + @taskActionsWidth + 2*@interSectionPadding;
+
+.spec-transition(@trs) {
+  -webkit-transition: @trs;
+  -moz-transition: @trs;
+  -o-transition: @trs;
+  transition: @trs;
+}

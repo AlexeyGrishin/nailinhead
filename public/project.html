@@ -32,7 +32,7 @@
             {{task.title}} <i ng-show='task.amount > 1' class="amount"> &times; {{task.amount}} </i>
         </strong>
         <task-actions-list task="task" booking="booking"></task-actions-list>
-        <div class="triangle-btn edit" ng-click="editTask(task)" title="Click to edit or delete the task" gr-attrs="title"><i></i></div>
+        <div class="triangle-btn edit" ng-click="editTask(task)" position="bottom" ui-title="Click to edit or delete the task" gr-attrs="ui-title"><i></i></div>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"
                       do-not-clear-form
@@ -52,7 +52,7 @@
             <label class="total">
                 = {{taskInEdit.edited.cost1 * taskInEdit.edited.amount | cost}}
             </label>
-            <div class="triangle-btn delete" ng-click="deleteTask(task)" title="Click to delete the task" gr-attrs="title"><i></i></div>
+            <div class="triangle-btn delete" ng-click="deleteTask(task)" ui-title="Click to delete the task" position="bottom" gr-attrs="ui-title"><i></i></div>
         </dialog-panel>
 
     </li>

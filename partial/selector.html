@@ -2,8 +2,7 @@
     <div class="selection-content">
         <strong ui-title="Click to deselect all" ng-click="selection.deselectAll()" gr-attrs="ui-title" position="bottom">
             <span  gr-key>{{selection.tasks.length}} task(s) selected</span>
-            <span class="hint" ng-show="selection.tasks.length == 1" gr-key>Ctrl+Click to select more</span>
-            <a  gr-key>Deselect all</a>
+            <span class="hint hide-800" ng-show="selection.tasks.length == 1" gr-key>Ctrl+Click to select more</span>
         </strong>
 
         <task-selection-list selection="selection"></task-selection-list>

@@ -2,10 +2,8 @@ module.exports = (app) ->
 
   app.service 'auth', ['backend', '$rootScope', '$timeout', (backend, $rootScope, $timeout) ->
     loggedIn = ->
-      console.log "auth:loggedIn"
       $rootScope.$broadcast 'auth:loggedIn'
     loginFailed = ->
-      console.log "auth:loginFailed"
       $rootScope.$broadcast 'auth:loginFailed'
     fireEvent = (res, error) ->
       if error then loginFailed() else loggedIn()

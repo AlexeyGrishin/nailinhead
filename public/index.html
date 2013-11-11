@@ -29,6 +29,9 @@
     <script gr-lang='ru' type='granula/lang' src='lang/ru-enums.json'></script>
 </head>
 <body ng-controller="global" gr-lang="{{currentLanguage}}">
+    <!-- @if !production !>
+    <div ng-controller="global" gr-lang="{{currentLanguage}}">
+    <!-- @endif -->
     <div class="header" ng-controller="header">
         <div class="header-content">
             <div class="budget" ng-show="auth.loggedIn">
@@ -75,7 +78,7 @@
                 <li ng-class="{selected: section=='projects'}"><a href="#/" gr-key> Projects</a></li>
                 <li ng-class="{selected: section=='reports'}"><a href="#/reports" gr-key>Reports</a></li>
             </ul>
-            <a class="info-icon" ng-class="{info: status.showHelp, error: status.showError}"
+            <a class="info-icon" ng-class="{info: ajaxStatus.showHelp, error: ajaxStatus.showError}"
                ng-click='clickInfo()'
                     >
                 <i class="info" ui-title="Show help" gr-attrs="ui-title" placement="top">?</i>
@@ -87,6 +90,9 @@
 
         </div>
     </div>
+    <!-- @if !production !>
+    </div>
+    <!-- @endif -->
 
 </body>
 </html>

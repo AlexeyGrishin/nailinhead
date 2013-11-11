@@ -2,9 +2,10 @@ Backend = require('./parse')
 
 module.exports = (app) ->
   app.service 'backend', ['$rootScope', ($rootScope) ->
-    Backend.init()
-    $(Backend).on 'backend.error', (event, error) ->
+    b = Backend()
+    b.init()
+    $(b).on 'backend.error', (event, error) ->
       console.error(error)
       $rootScope.$broadcast 'backend.error', error
-    Backend
+    b
   ]

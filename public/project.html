@@ -23,7 +23,7 @@
         <li gr-key>Add your task!</li>
     </ul>
     </div>
-<ul class="tasks-list">
+<ul class="tasks-list" ng-hide='loading'>
     <li ng-repeat="task in project.tasks | nonCompleted:!showCompleted"
         class="{{task.status}}"
         ng-class="{selected: selection.isSelected(task)}"
@@ -61,6 +61,7 @@
                       save-button-title="Save"
                       cancel-button-title="Close"
                       gr-attrs="save-button-title,cancel-button-title"
+                      do-not-clear-form="true"
                       on-save="addTask()" on-hide="addTaskDialog=false" >
             <label>
                 <input ng-model="newTask.title" class="input-long"/>

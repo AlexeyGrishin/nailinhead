@@ -18,8 +18,10 @@ expectation = (method, url, dataPart) ->
     return true
   andReturn: (json) ->
     @returnVal = json
+    @
   andError: (error) ->
-    @returnErr = error
+    @returnErr = {responseText: JSON.stringify(error)}
+    @
   process: (promise) ->
     return promise.reject(@returnErr) if @returnErr
     promise.resolve(@returnVal ? {})
@@ -77,6 +79,23 @@ ParseUtil =
 
   expectSearch: (cls, result) ->
     @expect("GET", "https://api.parse.com/1/classes/#{cls}").andReturn results:result
+
+  expectGetUser: (result) ->
+    @expect("GET", "https://api.parse.com/1/users").andReturn result
+
+  expectLogin: (incoming) ->
+    @expect("GET", "https://api.parse.com/1/login", incoming).andReturn {objectId: "user1", sessionToken: "session1"}
+
+  expectRegister: (incoming, result) ->
+    @expect("POST", "https://api.parse.com/1/users", incoming).andReturn result
+
+  setLoggedIn: ->
+    Parse.User._currentUserMatchesDisk = false
+    window.localStorage["Parse/eXTzA1h8G4j7HzEpKbsHpJh4ZbzpkFKRzxn50gJp/currentUser"] =
+      """
+      {"username":"Uef","objectId":"12345","createdAt":"2013-10-06T00:46:17.458Z","updatedAt":"2013-11-07T00:19:00.362Z","_id":"12345","_sessionToken":"yeq5vcczrts2ckc5hlpb9gsvy"}
+      """
+    window.localStorage["Parse/eXTzA1h8G4j7HzEpKbsHpJh4ZbzpkFKRzxn50gJp/installationId"] = Parse._getInstallationId()
 
   verifyNoMoreExpectations: ->
     return if expectations.length == 0

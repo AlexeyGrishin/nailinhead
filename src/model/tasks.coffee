@@ -215,6 +215,8 @@ class Budget extends ModelMixin
 
   deleteProject: (proj) ->
     @projects.splice @projects.indexOf(proj), 1
+    proj.tasks.forEach (t) ->
+      t.delete()
 
   addTask: (props, cb = ->) ->
     props = copy(props)

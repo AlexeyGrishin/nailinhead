@@ -1,7 +1,13 @@
 app = angular.module('puzzle', ['granula'])
 (require './backend/parse_angular')(app)
 
-{getDialog} = (require './ui')(app)
+safeApply = ($scope, cb = ->)->
+  if not $scope.$root.$$phase
+    $scope.$apply(cb)
+  else
+    cb()
+
+{getDialog} = (require './ui')(app, safeApply)
 (require './tasks/selection')(app)
 (require './tasks/actions')(app)
 (require './auth/auth')(app)
@@ -23,12 +29,11 @@ app.controller 'global', ['$scope', 'budget', 'auth', '$location', 'status', ($s
   reset()
   $scope.auth = auth
   $scope.$on 'auth:loggedIn', ->
-    console.log "load tasks"
     budget.load().then ((budget) ->
       $scope.budget = budget
       $scope.booking = budget.booked
       $scope.loading = false
-      $scope.$apply()
+      safeApply($scope)
     ), (error) ->
       console.error error if error
   $scope.$on 'auth:loginFailed', ->
@@ -39,7 +44,8 @@ app.controller 'global', ['$scope', 'budget', 'auth', '$location', 'status', ($s
     auth.logout(->)
   auth.check()
   $scope.$on '$routeChangeSuccess', (ev, route) ->
-    $location.path "/auth" if $location.path() != '/auth' && not auth.loggedIn && not auth.checking
+    if $location.path() != '/auth' && not auth.loggedIn && not auth.checking
+      $location.path "/auth"
     $scope.section = route.section
 
   $scope.import = ->
@@ -64,7 +70,7 @@ app.controller 'global', ['$scope', 'budget', 'auth', '$location', 'status', ($s
 ]
 
 app.controller 'footer', ['$scope', 'status', ($scope, status) ->
-  $scope.status = status.status
+  $scope.ajaxStatus = status.status
   $scope.dialogs =
     error:
       show: false
@@ -117,13 +123,13 @@ app.controller 'login', ['$scope', 'auth', '$location', ($scope, auth, $location
   if auth.loggedIn
     return $location.path "/"
   onLogReg = (user, error) ->
+    $scope.logReg = false
     if user
       $location.path "/"
     else
       $scope.error = error
       error.isLogin = true
-    $scope.logReg = false
-    $scope.$apply()
+    safeApply($scope)
   startCall = ->
     $scope.error = null
     $scope.logReg = true
@@ -155,8 +161,6 @@ app.controller 'projects', ['$scope', '$location', 'tasksSelection', ($scope, $l
 ]
 
 SHOW_COMPLETED_KEY = 'NIH_proj_show_completed'
-safeApply = ($scope)->
-  $scope.$apply() if not $scope.$$phase
 
 app.controller 'project', ['tasksSelection', 'budget', '$scope', '$routeParams', '$location', (tasksSelection, budget, $scope, $routeParams, $location) ->
 
@@ -180,11 +184,14 @@ app.controller 'project', ['tasksSelection', 'budget', '$scope', '$routeParams',
     amount = 1 if isNaN(amount) or amount < 1
     amount
   $scope.currentTask = {}
-  $scope.newTask = {title: "", cost1: 0, amount: 1}
+  resetNewTask = ->
+    $scope.newTask = {title: "", cost1: 0, amount: 1}
+  resetNewTask()
   $scope.addTask = ->
     $scope.newTask.amount = safeAmount($scope.newTask.amount)
     $scope.newTask.cost = $scope.newTask.cost1 * $scope.newTask.amount
     $scope.project.addTask($scope.newTask, -> safeApply($scope)) if $scope.newTask.title
+    resetNewTask()
     setTimeout (->
       $scope.addTaskDialog = true
       $scope.$apply()
@@ -292,7 +299,7 @@ app.controller 'reports', ['budget', '$scope', '$routeParams', '$location', (bud
 
 app.filter 'nonCompleted', ->
   (input, doFilter) ->
-    return input if not doFilter or input is undefined
+    return input if not doFilter or input is undefined or input is null
     input.filter (t) -> not t.is('completed')
 
 app.service 'projectThumbModel', ->

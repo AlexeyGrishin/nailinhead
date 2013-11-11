@@ -1,11 +1,7 @@
-Project = Parse.Object.extend "Project"
-Group = Parse.Object.extend "Group"
-Report = Parse.Object.extend "Report"
-
 Me = -> Parse.User.current()
 
 #TODO: now here is only auth. Good time to unite this class and auth
-Backend =
+Backend = ->
 
   currentUser: {}
 
@@ -18,7 +14,7 @@ Backend =
       Parse.User.logOut()
       cb(authenticated)
     else
-      @_updateCurrentUser()
+      @_setCurrentUser()
       cb(authenticated)
 
 
@@ -26,9 +22,12 @@ Backend =
     return cb() if Me() is null
     Me().fetch {
       success: =>
-        angular.copy Me()?.toJSON(), @currentUser
+        @_setCurrentUser()
         cb()
     }
+
+  _setCurrentUser: ->
+    angular.copy Me()?.toJSON(), @currentUser
 
 
   register: (userData, cb) ->
@@ -41,8 +40,8 @@ Backend =
 
   login: (userData, cb) ->
     Parse.User.logIn userData.username, userData.password, @defaultHandler (res, error) =>
-      @_updateCurrentUser ->
-        cb(res, error)
+      @_setCurrentUser()
+      cb(res, error)
 
   logout: (cb) ->
     Parse.User.logOut()

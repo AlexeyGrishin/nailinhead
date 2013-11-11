@@ -11,7 +11,9 @@ module.exports = (config) ->
             "node_modules/ng-midway-tester/src/ngMidwayTester.js",
             "tests/lib/jasmine-jquery.js",
             "tests/model/parseUtil.js",
-            "tests/acceptance/*.js"]
+            "tests/model/*Spec.js",
+            "tests/acceptance/utils.js",
+            "tests/acceptance/*Spec.js"]
     browsers: ['Chrome']
     reporters: ['progress', 'html']
     proxies: {

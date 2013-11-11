@@ -1,4 +1,5 @@
-<ng-switch on='error.code || status.error.code'>
+<ng-switch on='error.code || ajaxStatus.error.code'>
+    <span ng-switch-when='-1' gr-key>Please provide both username and password for register</span>
     <span ng-switch-when='200' gr-key>Username is missing</span>
     <span ng-switch-when='201' gr-key>Password is missing</span>
     <span ng-switch-when='202' gr-key>Username is already taken by another user</span>
@@ -7,4 +8,5 @@
         <span ng-show='error.isLogin' gr-key>Invalid username or password</span>
         <span ng-hide='error.isLogin' gr-key>Object you've tried to edit not found. To see actual information please reload the page</span>
     </span>
+    <span ng-switch-default>{{error.message || ajaxStatus.error.message}}</span>
 </ng-switch>

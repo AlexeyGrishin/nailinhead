@@ -12,6 +12,12 @@
   .gradient(@color, @color, lighten(@color, @prc))
 }
 
+@media screen and (max-width: 800px) {
+  .hide-800 {
+    display: none;
+  }
+}
+
 
 @font-face {
   font-family: 'open_sanslight';
@@ -78,7 +84,8 @@ body {
 //header
 
 .header {
-  width: 100%;
+  left: 0;
+  right: 0;
   z-index: 100;
   min-height: @topHeaderHeight;
   padding: @topHeaderPadding;

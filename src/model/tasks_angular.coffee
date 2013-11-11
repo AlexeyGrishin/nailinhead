@@ -13,7 +13,6 @@ module.exports = (app) ->
         counter = 0
         $timeout ->
           $rootScope.$apply()
-          console.log "applied after Parse call"
     Parse._ajax = (args...) ->
       counter++
       p = oldAjax.call(Parse, args...)

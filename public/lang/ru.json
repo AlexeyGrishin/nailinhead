@@ -1,10 +1,13 @@
 {
-    "-------------------added": "Mon Nov 11 2013 00:47:38 GMT+0400 (Московское время (зима))",
-    "Send me e-mail": "E-mail для связи",
     "-----------------deleted": {
+        "Deselect all": "Отменить выделение",
         "x": "✍  x",
         "Edit current budget": "Изменить текущий бюджет"
     },
+    "Please provide both username and password for register": "Пожалуйста укажите логин и пароль",
+    "Invalid username or password": "Неверно указаны логин и пароль",
+    "Object you've tried to edit not found. To see actual": "Объект скорее всего был удален в конкурентной сессии. Перезагрузите страницу",
+    "Send me e-mail": "E-mail для связи",
     "Someone changed this budget in concurrent session. To see actual": "Кто-то поменял бюджет или одну из покупок параллельно с вами. Чтобы увидеть актуальную информацию пожалуйста перезагрузите страницу",
     "Click to delete the selected task(s):selection.tasks.length": "Щелкните чтобы удалить выделенн(ую,ые,ые):selection.tasks.length покупк(у,и,и):selection.tasks.length",
     "Erase & Close": "Очистить и закрыть",
@@ -54,6 +57,5 @@
     " No tasks completed in this month ": "В этом месяце не было совершено ни одной покупки",
     "Click to deselect all": "Сбросить выделение",
     "{{selection.tasks.length}} task(s) selected": "{{selection.tasks.length}} покуп(ка,ки,ок) выделен(а,ы,о)",
-    "Ctrl+Click to select more": "Выберите несколько щелкнув с зажатым Ctrl",
-    "Deselect all": "Отменить выделение"
+    "Ctrl+Click to select more": "Выберите несколько щелкнув с зажатым Ctrl"
 }

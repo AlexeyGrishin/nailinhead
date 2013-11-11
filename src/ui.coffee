@@ -1,4 +1,4 @@
-module.exports = (app) ->
+module.exports = (app, safeApply) ->
 
   setVal = (scope, name, val) ->
     act = ->
@@ -119,7 +119,7 @@ module.exports = (app) ->
     restrict: 'E'
 
   MAX_STEPS = 100
-  app.directive 'countdown', ->
+  app.directive 'countdown', ['$timeout', ($timeout) ->
     (scope, el, attrs) ->
       to = null
       target = null
@@ -153,12 +153,13 @@ module.exports = (app) ->
             val -= step
             val = target if val < target
           setElVal(val)
-          to = setTimeout doStep, 10
+          to = $timeout(doStep, 10)
         doStep()
+  ]
 
   app.directive 'uiTitle', ->
     (scope, el, attrs) ->
-      el.tooltip placement: attrs.placement ? attrs.position ? "right", html: true, title: -> attrs.uiTitle
+      el.tooltip placement: attrs.placement ? attrs.position ? "right", html: true, title: -> el.attr('ui-title')
 
   app.directive 'uiDialog', ->
     transclude: true
@@ -184,10 +185,9 @@ module.exports = (app) ->
       $(el).modal()
       $(el).modal('hide')
       $(el).on 'shown', ->
-        scope.$apply ->
-          scope.model.show = true
+        safeApply scope, -> scope.model.show = true
       $(el).on 'hidden', ->
-        scope.$apply ->
+        safeApply scope, ->
           scope.closeAction()
           scope.model.show = false
       scope.$watch("model.show", ->
@@ -243,13 +243,21 @@ module.exports = (app) ->
         processingByOurClick = true
         el.addClass('processing')
         scope.$apply(attr.longClick)
+        if scope.$eval(attr.processing) == false
+          doEnable()
+      doDisable = ->
+        el.attr('disabled', 'disabled') if not processingByOurClick
+
+      doEnable = ->
+        el.removeClass('processing')
+        el.removeAttr('disabled')
+        processingByOurClick = false
+
       scope.$watch attr.processing, (newVal) ->
         if newVal
-          el.attr('disabled', 'disabled') if not processingByOurClick
+          doDisable()
         else
-          el.removeClass('processing')
-          el.removeAttr('disabled')
-          processingByOurClick = false
+          doEnable()
 
   app.provider 'status', ->
     status:

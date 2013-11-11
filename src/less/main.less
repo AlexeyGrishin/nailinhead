@@ -119,8 +119,12 @@ body {
   }
   .edit-budget-dialog {
     margin-top: 5px;
+    &.shown {
+      height: 0
+    };
     form {
       padding: 5px;
+      .drop-shadow(0, 3px, 4px, 0.9);
     }
     clear: both;
     width: 230px;

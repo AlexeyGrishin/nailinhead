@@ -1,3 +1,6 @@
+#TODO: here is the first attempt to write acceptance tests with angular+parse+ngMidwayTester.
+#      it shall be cleaned out - some template for all tests which turn on parse ajax mock, fake timers, etc
+
 async = (cb) ->
   ->
     return cb() if cb.length == 0
@@ -16,11 +19,14 @@ eraseLocalStorage = ->
 
 createTester = ->
   tester = ngMidwayTester("puzzle", {templateUrl: "/tests/index.html"})
+  #Not sure why but without following line I have infinite loop of $digest in $locationWatch function
+  #Probably it is related to how karma renders page in iframe, probably history api does not work properly in this case
   tester.inject('$sniffer').history = false
   tester.visitSync = (path, cb) ->
     doAsync (done) =>
       @visit path, ->
-        setTimeout (->done()), 50
+        setTimeout (->done()), 200    #Had to add this timeout. Without it tests fail time to time because some
+                                      # partial templates did not loaded. Need another solution
     doAsync (done) ->
       try
         cb()
@@ -34,6 +40,7 @@ jQuery.fn.fill = (value) ->
   $(@).trigger 'input'
   $(@).trigger 'change'
 
+# I cannot use jasmine.Clock because it overrides global setTimeout/setInterval, but ngMidwayTester uses them
 FakeTimer =
   actions: []
   execute: ->
@@ -51,6 +58,7 @@ FakeTimer =
           FakeTimer.actions.push(fn)
 
 
+#Standard matchers from jquery-jasmine says that any element in hidden.
 HtmlMatchers = {
   toBeVisible: ->
     @actual.length && @actual.css('display') != 'none'

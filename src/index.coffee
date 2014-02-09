@@ -244,11 +244,13 @@ app.controller 'reports', ['budget', '$scope', '$routeParams', '$location', (bud
   month = parseFloat($routeParams.month)
   month = 0 if not isNaN(year) and isNaN(month)
   today = new Date()
+  isFuture = (year, month) ->
+    year > today.getFullYear() || (year == today.getFullYear() && month > today.getMonth())
   if isNaN(year) and isNaN(month)
     date = today
     year = date.getFullYear()
     month = date.getMonth()
-  else if year > today.getFullYear() || month > today.getMonth()
+  else if isFuture(year, month)
     $location.path "/reports"
   else
     date = new Date()
@@ -301,6 +303,16 @@ app.filter 'nonCompleted', ->
   (input, doFilter) ->
     return input if not doFilter or input is undefined or input is null
     input.filter (t) -> not t.is('completed')
+
+app.directive 'reportTooltip', ['costFilter', (costFilter) ->
+  (scope, el, attrs) ->
+    scope.$watch attrs.reportTooltip, (tooltipInfo) ->
+      return if not tooltipInfo
+      title = "<ul class='task-list-in-title'>" + tooltipInfo.map(({title, cost}) ->
+        "<li><span>#{costFilter(cost)}</span><label>#{title}</label></li>"
+      ).join('') + "</ul>"
+      el.tooltip placement: "right", html: true, delay: {show: 100, hide: 100}, container: el.parents("table"), title: title
+]
 
 app.service 'projectThumbModel', ->
   create: (project, maxAmountOfTasks) ->

@@ -41,8 +41,11 @@ class Report
       report.tasks = report.tasks.concat(project.tasks)
     for project in report.projects
       project.sums = []
+      project.tooltips = []
       for date in report.dates
-        project.sums.push (find(date.projects, project)?.sum)
+        projectData = find(date.projects, project)
+        project.sums.push (projectData?.sum)
+        project.tooltips.push projectData?.tasks.map((t) -> {title: t.title, cost: t.cost})
     report
 
 

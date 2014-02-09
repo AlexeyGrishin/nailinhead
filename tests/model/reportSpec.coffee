@@ -6,7 +6,7 @@ describe 'report builder', ->
     report.addTasks(1,1, [task1])
     r = report.build()
     expect(r.projects).toEqual([
-      {name: "a", sums: [3]}
+      {name: "a", sums: [3], tooltips: [[{title: 'test', cost: 3}]]}
     ])
     expect(r.dates).toEqual([
       {month:1, year:1, projects:[{name: "a", sum: 3, tasks: [task1]}]}
@@ -21,8 +21,8 @@ describe 'report builder', ->
     report.addTasks(2,1, [task2])
     r = report.build()
     expect(r.projects).toEqual([
-      {name: "a", sums: [3, 5]}
-      {name: "b", sums: [6, undefined]}
+      {name: "a", sums: [3, 5], tooltips: [[{title: "task-in-project-a", cost: 3}], [{title: "task-in-project-a", cost: 5}]]}
+      {name: "b", sums: [6, undefined], tooltips: [[{title: "task-in-project-b", cost: 6}], undefined]}
     ])
     expect(r.dates).toEqual([
       {month:1, year:1, projects:[{name: "a", sum: 3, tasks: [task1]},{name: "b", sum: 6, tasks: [task3]}]}

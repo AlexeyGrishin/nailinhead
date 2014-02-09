@@ -22,7 +22,9 @@
     </tr>
     <tr ng-repeat='proj in report.projects'>
         <th>{{proj.name}}</th>
-        <td ng-repeat='sum in proj.sums' ng-class='{current: report.currentDateIdx == $index}'>{{sum | cost}}</td>
+        <td ng-repeat='sum in proj.sums' ng-class='{current: report.currentDateIdx == $index, plus: sum < 0}' report-tooltip="proj.tooltips[$index]">
+            {{sum | cost}}
+        </td>
     </tr>
 </table>
 <div class="empty-case" ng-show="!report.loading && report.tasks.length == 0" gr-key>
@@ -31,7 +33,7 @@
 <ul ng-show="!report.loading && report.tasks.length > 0" class="report-tasks-list">
     <li ng-repeat="task in report.tasks | orderBy:'cProjectName'">
         <strong>{{task.title}} <span class="tag">{{task.cProjectName}}</span></strong>
-        <span class="cost">{{task.cost | cost}}</span>
+        <span class="cost" ng-class="{plus: sum < 0}">{{task.cost | cost}}</span>
         <div class="triangle-btn edit" ng-click="editTask(task)" ui-title="Click to edit or delete the task" gr-attrs="ui-title"><i></i></div>
         <dialog-panel show-if="isInEdit(task)"
                       class="edit-task-dialog one-line"

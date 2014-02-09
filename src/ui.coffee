@@ -159,7 +159,8 @@ module.exports = (app, safeApply) ->
 
   app.directive 'uiTitle', ->
     (scope, el, attrs) ->
-      el.tooltip placement: attrs.placement ? attrs.position ? "right", html: true, title: -> el.attr('ui-title')
+      container = if el.is('td') then el.parent().parent()
+      el.tooltip placement: attrs.placement ? attrs.position ? "right", html: true, container: container, title: -> el.attr('ui-title')
 
   app.directive 'uiDialog', ->
     transclude: true
@@ -205,6 +206,8 @@ module.exports = (app, safeApply) ->
     div = parseFloat(input)
     div = 0 if isNaN(div)
     return 0 if div == 0
+    if div < 0
+      return '+' + formatCost(-div, separator)
     while div > 0
       rem = div % 1000
       div = div / 1000 |0

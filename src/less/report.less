@@ -17,6 +17,24 @@
   td.current {
     background: @goldPanel;
   }
+  td.plus {
+    .plus-cost();
+  }
+  .tooltip {
+    .task-list-in-title {
+      list-style: none;
+      text-align: left;
+      padding-left: 10px;
+      label {
+        clear: both;
+
+      }
+      span {
+        float: right;
+        margin-left: 20px;
+      }
+    }
+  }
 }
 
 .report-tasks-list {
@@ -48,6 +66,9 @@
       width: 200px;
       font-size: @fontBig;
       text-align: right;
+      &.plus {
+        .plus-cost();
+      }
     }
     .triangle-btn {
       position: absolute;

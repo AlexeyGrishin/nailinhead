@@ -1,5 +1,5 @@
 <section class="task-actions {{task.status}}">
-    <div class="group-selector" ng-class="{on: taskBooked, off: !taskBooked}" ng-click="toggleBooked()" ng-hide="task.status == 'completed'">
+    <div class="group-selector" ng-class="{on: taskBooked, off: !taskBooked}" ng-click="toggleBooked()" ng-hide="task.status == 'completed' || task.cost < 0">
         <span ng-show="taskBooked"  gr-key>booked</span>
         <span ng-show="!taskBooked" gr-key>not booked</span>
     </div>

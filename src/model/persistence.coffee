@@ -24,7 +24,7 @@ ParseUtils =
     }
     promise
   structToQuery: (parseClassName, data) ->
-    q = new Parse.Query(parseClassName)
+    q = new Parse.Query(parseClassName).limit(1000)
     for name, val of data
       if val == '@currentUser'
         q.equalTo(name, Parse.User.current())
